@@ -2687,6 +2687,7 @@ var _date = new Date();
               _this._delete_all_layers();
               _this._draw_stage_layer();
               if(_this.settings.dendrogram){
+                _this._draw_dendrogram_layers();
                 _this._draw_row_dendrogram(node_id);
                 if(_this.settings.column_dendrogram && _this._visible_features_equal_column_dendrogram_count()){
                   _this._draw_column_dendrogram(_this.column_root_id);
