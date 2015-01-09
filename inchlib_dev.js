@@ -126,6 +126,9 @@
 * @option {array} [columns_order=[]]
 *   the order of columns defined by their indexes startin from 0, when not provided the columns are sorted in common order 0, 1, 2... etc.
 
+* @option {boolean} [alternative_data=false]
+*   use original data to compute heatmap but show the alternative values (alternative_data section must be present in input data)
+
 * 
 * @example
 *       window.instance = new InCHlib({
@@ -186,7 +189,8 @@ var _date = new Date();
           "max_percentile": 100,
           "min_percentile": 0,
           "middle_percentile": 50,
-          "columns_order": []
+          "columns_order": [],
+          "alternative_data": false
       };
 
       $.extend(_this.settings, settings);
@@ -670,6 +674,7 @@ var _date = new Date();
   InCHlib.prototype.read_data = function(json){
       _this.json = json;
       _this.data = _this.json.data;
+      
       var settings = {};
       if(_this.json["metadata"] !== undefined){
         _this.metadata = _this.json.metadata;
@@ -691,6 +696,13 @@ var _date = new Date();
       }
       else{
         settings.column_metadata = false;
+      }
+
+      if(_this.json["alternative_data"] !== undefined && _this.settings.alternative_data){
+        _this.alternative_data = _this.json.alternative_data;
+      }
+      else{
+        settings.alternative_data = false; 
       }
 
       _this._update_user_settings(settings);
@@ -725,6 +737,15 @@ var _date = new Date();
             metadata[id] = _this.metadata.nodes[keys[i]];
         }
         _this.metadata.nodes = metadata;
+      }
+
+      if(_this.settings.alternative_data){
+        var alternative_data = {};
+        for(var i = 0, keys = Object.keys(_this.alternative_data), len = keys.length; i < len; i++){
+            id = [_this.settings.target, keys[i]].join("#");
+            alternative_data[id] = _this.alternative_data[keys[i]];
+        }
+        _this.alternative_data = alternative_data;
       }
 
       if(_this.column_dendrogram){
@@ -1465,6 +1486,10 @@ var _date = new Date();
 
           if(value !== null){
             color = _this._get_color_for_value(value, _this.data_descs[col_index]["min"], _this.data_descs[col_index]["max"], _this.data_descs[col_index]["middle"], _this.settings.heatmap_colors);
+
+            if(_this.settings.alternative_data){
+              value = _this.alternative_data[node_id][col_index];
+            }
 
             line = _this.objects_ref.heatmap_line.clone({
                 stroke: color,
