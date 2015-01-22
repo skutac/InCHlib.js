@@ -977,21 +977,41 @@ var _date = new Date();
       _this.last_highlighted_cluster = null;
       _this.current_object_ids = [];
       _this.current_column_ids = [];
+      _this.highlighted_rows_y = [];
       _this.heatmap_array = _this._preprocess_heatmap_data();
+
+      _this.on_features = {"data":[], "metadata":[], "count_column": []};
+
+      _this.column_metadata_rows = (_this.settings.column_metadata)?_this.column_metadata.features.length:0;
+      _this.column_metadata_height = _this.column_metadata_rows * _this.settings.column_metadata_row_height;
 
       if(_this.settings.heatmap){
         _this.last_column = null;
-        _this.on_features = {"data":[], "metadata":[]}
         _this.dimensions = _this._get_dimensions();
-        _this.column_metadata_rows = (_this.settings.column_metadata)?_this.column_metadata.features.length:0;
-        _this.column_metadata_height = _this.column_metadata_rows * _this.settings.column_metadata_row_height;
         _this._set_heatmap_settings();
-        _this._adjust_leaf_size(_this.heatmap_array.length);
       }
       else{
-        _this._adjust_horizontal_sizes();
         _this.dimensions = {"data": 0, "metadata": 0, "overall": 0};
+        _this.settings.heatmap_header = false;
+        _this.settings.column_dendrogram = false;
       }
+      _this._adjust_horizontal_sizes();
+      _this.top_heatmap_distance = _this.header_height + _this.column_metadata_height + _this.settings.column_metadata_row_height/2;
+      _this._adjust_leaf_size(_this.heatmap_array.length);
+
+      // if(_this.settings.heatmap){
+      //   _this.last_column = null;
+      //   _this.on_features = {"data":[], "metadata":[]}
+      //   _this.dimensions = _this._get_dimensions();
+      //   _this.column_metadata_rows = (_this.settings.column_metadata)?_this.column_metadata.features.length:0;
+      //   _this.column_metadata_height = _this.column_metadata_rows * _this.settings.column_metadata_row_height;
+      //   _this._set_heatmap_settings();
+      //   _this._adjust_leaf_size(_this.heatmap_array.length);
+      // }
+      // else{
+      //   _this._adjust_horizontal_sizes();
+      //   _this.dimensions = {"data": 0, "metadata": 0, "overall": 0};
+      // }
 
       if(_this.settings.column_dendrogram && _this.heatmap_header){
           _this.footer_height = 150;
@@ -1232,28 +1252,27 @@ var _date = new Date();
   }
 
   InCHlib.prototype._adjust_leaf_size = function(leaves){
-      _this.pixels_for_leaf = (_this.settings.max_height-_this.header_height-_this.footer_height-_this.column_metadata_height-5)/leaves;
-      if(_this.pixels_for_leaf > 2*_this.pixels_for_dimension){
-        _this.pixels_for_leaf = 2*_this.pixels_for_dimension;
-      }
+    _this.pixels_for_leaf = (_this.settings.max_height-_this.header_height-_this.footer_height-_this.column_metadata_height-5)/leaves;
 
-      if(_this.pixels_for_leaf > _this.settings.max_row_height){
-          _this.pixels_for_leaf = _this.settings.max_row_height;
-      }
+    if(_this.pixels_for_leaf > _this.settings.max_row_height){
+        _this.pixels_for_leaf = _this.settings.max_row_height;
+    }
 
-      if(_this.settings.min_row_height > _this.pixels_for_leaf){
-          _this.pixels_for_leaf = _this.settings.min_row_height;
-      }
+    if(_this.settings.min_row_height > _this.pixels_for_leaf){
+        _this.pixels_for_leaf = _this.settings.min_row_height;
+    }
   }
 
   InCHlib.prototype._adjust_horizontal_sizes = function(dimensions){
       if(dimensions === undefined){
         dimensions = _this._get_visible_count();
       }
+      var heatmap_part_width = (dimensions > 0)?_this.settings.heatmap_part_width:0;
       _this.right_margin = 100;
+
       
       if(_this.settings.dendrogram){
-        _this.heatmap_width = (_this.settings.width - _this.right_margin - _this.dendrogram_heatmap_distance)*_this.settings.heatmap_part_width;
+        _this.heatmap_width = (_this.settings.width - _this.right_margin - _this.dendrogram_heatmap_distance)*heatmap_part_width;
         _this.distance = _this.settings.width - _this.heatmap_width - _this.right_margin;
         _this.heatmap_distance = _this.distance + _this.dendrogram_heatmap_distance;
       }
@@ -2079,7 +2098,7 @@ var _date = new Date();
 
    InCHlib.prototype.highlight_rows = function(row_ids){
       var i, row, row_id;
-      if(!_this.settings.heatmap){
+      if(!_this.settings.heatmap||_this.dimensions["overall"] === 0){
         return;
       }
 
