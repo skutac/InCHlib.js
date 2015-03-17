@@ -138,6 +138,9 @@
 * @option {object} [images_path=false]
 *   when using images_as_alternative_data option - set dir path of the image files and the image files extension to generate the whole file path ({"dir": "", "ext": ""})
 
+* @option {object} [navigation_toggle={"distance_scale": false, "filter_button": false, "export_button": false, "color_scale": false, "hint_button": false}]
+*   toggle "navigation" features - true/false
+
 * 
 * @example
 *       window.instance = new InCHlib({
@@ -196,17 +199,17 @@ var _date = new Date();
           "font": "Helvetica",
           "draw_row_ids": false,
           "fixed_row_id_size": false,
-          "show_export_button": true,
           "max_percentile": 100,
           "min_percentile": 0,
           "middle_percentile": 50,
           "columns_order": [],
           "alternative_data": false,
           "images_as_alternative_data": true,
-          "images_path": {"dir": "", "ext": ""}
+          "images_path": {"dir": "", "ext": ""},
+          "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true}
       };
 
-      $.extend(self.settings, settings);
+      self.update_settings(settings)
       self.settings.width = (settings.max_width && settings.max_width < target_width)?settings.max_width:self.settings.width;
       self.settings.heatmap_part_width = (self.settings.heatmap_part_width>0.9)?0.9:self.settings.heatmap_part_width;
 
@@ -1916,7 +1919,10 @@ var _date = new Date();
   }
 
   InCHlib.prototype._draw_distance_scale = function(distance){
-    var self = this;
+      var self = this;
+      if(!self.settings.navigation_toggle.distance_scale){
+        return;
+      }
       var y1 = self.header_height + self.column_metadata_height + self.settings.column_metadata_row_height/2 -10;
       var y2 = y1;
       var x1 = 0;
@@ -1991,8 +1997,8 @@ var _date = new Date();
         self._draw_color_scale();
       }
       self._draw_help();
-
-      if(!self.settings.column_dendrogram && self.settings.heatmap){
+  
+      if(!self.settings.column_dendrogram && self.settings.heatmap && self.settings.navigation_toggle.filter_button){
           var filter_icon = self.objects_ref.icon.clone({
                   data: "M26.834,6.958c0-2.094-4.852-3.791-10.834-3.791c-5.983,0-10.833,1.697-10.833,3.791c0,0.429,0.213,0.84,0.588,1.224l8.662,15.002v4.899c0,0.414,0.709,0.75,1.583,0.75c0.875,0,1.584-0.336,1.584-0.75v-4.816l8.715-15.093h-0.045C26.625,7.792,26.834,7.384,26.834,6.958zM16,9.75c-6.363,0-9.833-1.845-9.833-2.792S9.637,4.167,16,4.167c6.363,0,9.834,1.844,9.834,2.791S22.363,9.75,16,9.75z",
                   x: x,
@@ -2095,7 +2101,7 @@ var _date = new Date();
           });
       }
 
-      if(self.settings.show_export_button){
+      if(self.settings.navigation_toggle.export_button){
         var export_icon = self.objects_ref.icon.clone({
               data: "M24.25,10.25H20.5v-1.5h-9.375v1.5h-3.75c-1.104,0-2,0.896-2,2v10.375c0,1.104,0.896,2,2,2H24.25c1.104,0,2-0.896,2-2V12.25C26.25,11.146,25.354,10.25,24.25,10.25zM15.812,23.499c-3.342,0-6.06-2.719-6.06-6.061c0-3.342,2.718-6.062,6.06-6.062s6.062,2.72,6.062,6.062C21.874,20.78,19.153,23.499,15.812,23.499zM15.812,13.375c-2.244,0-4.062,1.819-4.062,4.062c0,2.244,1.819,4.062,4.062,4.062c2.244,0,4.062-1.818,4.062-4.062C19.875,15.194,18.057,13.375,15.812,13.375z",
               x: self.settings.width - 62,
@@ -2126,6 +2132,9 @@ var _date = new Date();
 
   InCHlib.prototype._draw_help = function(){
     var self = this;
+    if(!self.settings.navigation_toggle.hint_button){
+      return;
+    }
     var help_icon = self.objects_ref.icon.clone({
           data: self.paths_ref["lightbulb"],
           x: self.settings.width - 63,
@@ -2152,11 +2161,14 @@ var _date = new Date();
   }
 
   InCHlib.prototype._draw_color_scale = function(){
-    var self = this;
+      var self = this;
+      if(!self.settings.navigation_toggle.color_scale){
+        return;
+      }
       var color_steps = [self.settings.min_percentile/100, self._get_color_for_value(0, 0, 1, 0.5, self.settings.heatmap_colors), self.settings.middle_percentile/100, self._get_color_for_value(0.5, 0, 1, 0.5, self.settings.heatmap_colors), self.settings.max_percentile/100, self._get_color_for_value(1, 0, 1, 0.5, self.settings.heatmap_colors)];
       var color_scale = self.objects_ref.rect_gradient.clone({"label": "Color settings",
                                                               "fillLinearGradientColorStops": color_steps,
-                                                              "id": "color_scale"});
+                                                              "id": self.settings.target + "_color_scale"});
 
       color_scale.on("mouseover", function(){
         self._color_scale_mouseover(color_scale, self.navigation_layer);
@@ -2175,7 +2187,9 @@ var _date = new Date();
 
   InCHlib.prototype._update_color_scale = function(){
     var self = this;
-    var color_scale = self.navigation_layer.find("#color_scale");
+    var color_scale = self.navigation_layer.find("#" + self.settings.target + "_color_scale");
+
+    console.log(color_scale)
     color_scale.fillLinearGradientColorStops([self.settings.min_percentile/100, self._get_color_for_value(0, 0, 1, 0.5, self.settings.heatmap_colors), self.settings.middle_percentile/100, self._get_color_for_value(0.5, 0, 1, 0.5, self.settings.heatmap_colors), self.settings.max_percentile/100, self._get_color_for_value(1, 0, 1, 0.5, self.settings.heatmap_colors)]);
     self.navigation_layer.draw();
   }
@@ -3582,7 +3596,13 @@ var _date = new Date();
     */
   InCHlib.prototype.update_settings = function(settings_object){
     var self = this;
+    var navigation_toggle = self.settings.navigation_toggle;
     $.extend(self.settings, settings_object);
+
+    if(settings_object.navigation_toggle !== undefined){
+      self.settings.navigation_toggle = navigation_toggle;
+      $.extend(self.settings.navigation_toggle, settings_object.navigation_toggle);
+    }
   }
 
   /**
