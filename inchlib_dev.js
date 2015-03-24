@@ -660,8 +660,8 @@ var _date = new Date();
                           }),
 
           "image": new Kinetic.Image({
-                      width: 30,
-                      height: 30
+                      stroke: "#D2D2D2",
+                      strokeWidth: 1
                   }),
       };
 
@@ -722,7 +722,7 @@ var _date = new Date();
     }
 
     if(self.json["alternative_data"] !== undefined && self.settings.alternative_data){
-      self.alternative_data = self.json.alternative_data;
+      self.alternative_data = self.json.alternative_data.nodes;
     }
     else{
       settings.alternative_data = false; 
@@ -814,12 +814,17 @@ var _date = new Date();
     var self = this;
       var dimensions = {"data": 0, "metadata": 0, "overall": 0}, key, keys, i;
 
-      for(i = 0, keys = Object.keys(self.data.nodes), len = keys.length; i < len; i++){
-          key = keys[i];
-          if(self.data.nodes[key].count == 1){
-              dimensions["data"] = self.data.nodes[key].features.length;
-              break;
-          }
+      if(self.settings.images_as_alternative_data){
+        dimensions["data"] = self.alternative_data[Object.keys(self.alternative_data)[0]].length;
+      }
+      else{
+        for(i = 0, keys = Object.keys(self.data.nodes), len = keys.length; i < len; i++){
+            key = keys[i];
+            if(self.data.nodes[key].count == 1){
+                dimensions["data"] = self.data.nodes[key].features.length;
+                break;
+            }
+        }
       }
 
       if(self.settings.metadata){
@@ -930,14 +935,19 @@ var _date = new Date();
     var node_data, key;
 
     if(self.settings.alternative_data){
-      for(var i = 0, keys = Object.keys(self.alternative_data), len = keys.length; i < len; i++){
-          key = keys[i];
-          node_data = self.alternative_data[key];
-          for(var j = 0, len_2 = node_data.length; j < len_2; j++){
-              if((""+node_data[j]).length > max_length){
-                  max_length = (""+node_data[j]).length;
-              }
-          }
+      if(self.settings.images_as_alternative_data){
+        max_length = 0;
+      }
+      else{
+        for(var i = 0, keys = Object.keys(self.alternative_data), len = keys.length; i < len; i++){
+            key = keys[i];
+            node_data = self.alternative_data[key];
+            for(var j = 0, len_2 = node_data.length; j < len_2; j++){
+                if((""+node_data[j]).length > max_length){
+                    max_length = (""+node_data[j]).length;
+                }
+            }
+        }
       }
     }
     else{
@@ -1436,11 +1446,17 @@ var _date = new Date();
 
       self._set_color_settings();
 
-      if(self.data.feature_names !== undefined){
-          self.heatmap_header = self.data.feature_names;
-          for(i=0; i<self.dimensions["data"]; i++){
-              self.header[i] = self.heatmap_header[self.on_features["data"][i]];
-          }
+      if(self.settings.alternative_data && self.json.alternative_data.feature_names !== undefined){
+        self.heatmap_header = self.json.alternative_data.feature_names;
+      }
+      else if(self.data.feature_names !== undefined){
+        self.heatmap_header = self.data.feature_names;
+      }
+
+      if(self.heatmap_header){
+        for(i=0; i<self.dimensions["data"]; i++){
+            self.header[i] = self.heatmap_header[self.on_features["data"][i]];
+        }
       }
 
       if(self.settings.metadata){
@@ -1575,13 +1591,16 @@ var _date = new Date();
           if(self.settings.alternative_data){
               text_value = self.alternative_data[node_id][col_index];
 
-              if(self.settings.images_as_alternative_data){
+              if(self.settings.images_as_alternative_data && text_value != "None" && text_value != ""){
                 value = null;
                 var filepath = self.settings.images_path.dir + text_value + self.settings.images_path.ext;
+                filepath = escape(filepath);
+
 
                 if(self.path2image[text_value] === undefined){
                   var image_obj = new Image();
                   image_obj.src = filepath;
+                  
                   image_obj.onload = function(){
                     self.image_counter++;
 
@@ -1606,8 +1625,8 @@ var _date = new Date();
                 row.add(image);
               }
           }
-          
-          if(value !== null){
+                 
+          if(value !== null && !self.settings.images_as_alternative_data){
             color = self._get_color_for_value(value, self.data_descs[col_index]["min"], self.data_descs[col_index]["max"], self.data_descs[col_index]["middle"], self.settings.heatmap_colors);
 
             line = self.objects_ref.heatmap_line.clone({
@@ -1629,6 +1648,8 @@ var _date = new Date();
               row.add(text);
             }
           }
+          
+
           x1 = x2;
       }
 

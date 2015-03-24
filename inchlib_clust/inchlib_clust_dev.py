@@ -358,22 +358,30 @@ class Dendrogram():
         if self.column_metadata_header:
             self.dendrogram["column_metadata"]["feature_names"] = self.column_metadata_header
 
-    def add_alternative_data_from_file(self, alternative_data_file, delimiter, alternative_data_compressed_value):
+    def add_alternative_data_from_file(self, alternative_data_file, delimiter, header, alternative_data_compressed_value):
         """Adds alternative_data from csv file."""
         self.alternative_data_compressed_value = alternative_data_compressed_value
-        self.add_alternative_data(self.__read_alternative_data_file__(alternative_data_file, delimiter), alternative_data_compressed_value)
+        self.add_alternative_data(self.__read_alternative_data_file__(alternative_data_file, delimiter), header, alternative_data_compressed_value)
 
-    def add_alternative_data(self, alternative_data, alternative_data_compressed_value):
+    def add_alternative_data(self, alternative_data, header, alternative_data_compressed_value):
         """Adds alternative data in a form of list of lists (tuples)."""
         self.alternative_data_compressed_value = alternative_data_compressed_value
 
         if self.cluster_object.clustering_axis == "both":
             alternative_data = self.__reorder_alternative_data__(alternative_data)
 
+        self.dendrogram["alternative_data"] = {}
+        self.alternative_data_header = False
+        
+        if header:
+            self.alternative_data_header = alternative_data[0][1:]
+            self.dendrogram["alternative_data"]["feature_names"] = self.alternative_data_header
+            alternative_data = alternative_data[1:]
+
         self.alternative_data = self.__read_alternative_data__(alternative_data)
 
         print("Adding alternative data: {} rows".format(len(self.alternative_data)))
-        self.dendrogram["alternative_data"] = self.__connect_additional_data_to_data__(self.alternative_data, self.alternative_data_compressed_value)
+        self.dendrogram["alternative_data"]["nodes"] = self.__connect_additional_data_to_data__(self.alternative_data, self.alternative_data_compressed_value)
 
     def __reorder_alternative_data__(self, alternative_data):
         alt_data_without_id = [r[1:] for r in alternative_data]
@@ -607,7 +615,7 @@ def _process_(arguments):
         d.add_column_metadata_from_file(column_metadata_file=arguments.column_metadata, delimiter=arguments.column_metadata_delimiter, header=arguments.column_metadata_header)
 
     if arguments.alternative_data:
-        d.add_alternative_data_from_file(alternative_data_file=arguments.alternative_data, delimiter=arguments.alternative_data_delimiter, alternative_data_compressed_value=arguments.alternative_data_compressed_value)
+        d.add_alternative_data_from_file(alternative_data_file=arguments.alternative_data, delimiter=arguments.alternative_data_delimiter, header=arguments.alternative_data_header, alternative_data_compressed_value=arguments.alternative_data_compressed_value)
     
     if arguments.output_file or arguments.html_dir:
         if arguments.output_file:
@@ -644,7 +652,8 @@ if __name__ == '__main__':
     parser.add_argument("-cmd", "--column_metadata_delimiter", type=str, default=",", help="delimiter of values in column metadata file")
     parser.add_argument("-cmh", "--column_metadata_header", default=False, help="whether the first column of the column metadata is the row label ('header')", action="store_true")
     parser.add_argument("-mv", "--missing_values", type=str, default=False, help="define the string representating missing values in the data")
-    parser.add_argument("-ad", "--alternative_data", type=str, default=None, help="csv(text) alternative data file with delimited values without header")
+    parser.add_argument("-ad", "--alternative_data", type=str, default=None, help="csv(text) alternative data file with delimited values")
+    parser.add_argument("-adh", "--alternative_data_header", default=False, help="whether the first row of alternative data file is a header", action="store_true")
     parser.add_argument("-add", "--alternative_data_delimiter", type=str, default=",", help="delimiter of values in alternative data file")
     parser.add_argument("-adcv", "--alternative_data_compressed_value", type=str, default="median", help="the resulted value from merged rows of alternative data when the data are compressed (median/mean/frequency)")
     
