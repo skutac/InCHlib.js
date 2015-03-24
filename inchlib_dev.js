@@ -1591,7 +1591,7 @@ var _date = new Date();
           if(self.settings.alternative_data){
               text_value = self.alternative_data[node_id][col_index];
 
-              if(self.settings.images_as_alternative_data && text_value != "None" && text_value != ""){
+              if(self.settings.images_as_alternative_data && text_value !== undefined && text_value !== null && text_value != ""){
                 value = null;
                 var filepath = self.settings.images_path.dir + text_value + self.settings.images_path.ext;
                 filepath = escape(filepath);
