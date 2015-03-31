@@ -1,6 +1,11 @@
 Changelog for pem
 =================
 
+0.1.4 (26-03-2015)
+------------------
+    - added functionality to add alternative data to the InCHlib format
+	- bug fixes and minor improvements
+
 0.1.3 (18-09-2014)
 ------------------
    - added functionality to process data with missing/unknown values
