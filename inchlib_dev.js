@@ -15,7 +15,7 @@
 * @author <a href="mailto:ctibor.skuta@img.cas.cz">Ctibor Škuta</a>
 * @author <a href="mailto:petr.bartunek@img.cas.cz">Petr Bartůněk</a>
 * @author <a href="mailto:svozild@vscht.cz">Daniel Svozil</a>
-* @version 1.1.0
+* @version 1.2.0
 * @category 1
 * @license InCHlib - Interactive Cluster Heatmap Library http://openscreen.cz/software/inchlib Copyright 2014, Ctibor Škuta, Petr Bartůněk, Daniel Svozil Licensed under the MIT license.
 * 
@@ -155,7 +155,6 @@
 */
 
 var InCHlib;
-var _date = new Date();
 
 (function($){
   
@@ -1799,6 +1798,7 @@ var _date = new Date();
 
   InCHlib.prototype._draw_row_ids = function(){
     var self = this;
+    
       if(self.pixels_for_leaf < 6 || self.row_id_size < 5){
           return;
       }
@@ -2642,6 +2642,7 @@ var _date = new Date();
     var self = this;
     self._delete_layers([self.dendrogram_layer, self.heatmap_layer, self.heatmap_overlay, self.cluster_layer, self.navigation_layer, self.header_layer, self.highlighted_rows_layer], [self.dendrogram_hover_layer]);
     self._draw_row_dendrogram(node_id);
+    self._get_row_id_size();
     self._draw_heatmap();
     self._draw_heatmap_header();
     self._draw_navigation();
