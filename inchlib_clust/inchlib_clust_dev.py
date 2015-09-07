@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import csv, json, copy, re, argparse, os, urllib2
 
-import numpy, scipy, fastcluster, sklearn
+import numpy, scipy, fastcluster, sklearn, jsmin
 import scipy.cluster.hierarchy as hcluster
 from sklearn import preprocessing
 from scipy import spatial
@@ -217,13 +217,24 @@ class Dendrogram():
 
         return i+test_step*2
 
-    def export_cluster_heatmap_as_json(self, filename=None):
+    def export_cluster_heatmap_as_json(self, filename=None, minify=False, dump=True):
         """Returns cluster heatmap in a JSON format or exports it to the file specified by the filename parameter."""
-        dendrogram_json = json.dumps(self.dendrogram, indent=4)
+        dendrogram = self.dendrogram
+        if minify:
+            dendrogram_json = json.dumps(dendrogram)
+            dendrogram_json = self.__minify_data(dendrogram_json)
+        elif dump:
+            dendrogram_json = json.dumps(dendrogram, indent=4)
+        else:
+            dendrogram_json = dendrogram
+        
         if filename:
             output = open(filename, "w")
             output.write(dendrogram_json)
         return dendrogram_json
+
+    def __minify_data(self, data):
+        return jsmin.jsmin(str(data))
 
     def export_cluster_heatmap_as_html(self, htmldir="."):
         """Export simple HTML page with embedded cluster heatmap and dependencies to given directory."""
@@ -619,11 +630,11 @@ def _process_(arguments):
     
     if arguments.output_file or arguments.html_dir:
         if arguments.output_file:
-            d.export_cluster_heatmap_as_json(arguments.output_file)
+            d.export_cluster_heatmap_as_json(arguments.output_file, minify=arguments.minify, dump=arguments.json_dump)
         else:
             d.export_cluster_heatmap_as_html(arguments.html_dir)
     else:
-        print(json.dumps(d.dendrogram, indent=4))
+        print(d.export_cluster_heatmap_as_json(filename=None, minify=arguments.minify, dump=arguments.json_dump))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -656,6 +667,8 @@ if __name__ == '__main__':
     parser.add_argument("-adh", "--alternative_data_header", default=False, help="whether the first row of alternative data file is a header", action="store_true")
     parser.add_argument("-add", "--alternative_data_delimiter", type=str, default=",", help="delimiter of values in alternative data file")
     parser.add_argument("-adcv", "--alternative_data_compressed_value", type=str, default="median", help="the resulted value from merged rows of alternative data when the data are compressed (median/mean/frequency)")
+    parser.add_argument("-min", "--minify", default=False, help="minify the InCHlib format", action="store_true")
+    parser.add_argument("-dump", "--json_dump", default=True, help="dump the InCHlib format as JSON", action="store_true")
     
     args = parser.parse_args()
     _process_(args)
