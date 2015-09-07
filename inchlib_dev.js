@@ -15,7 +15,7 @@
 * @author <a href="mailto:ctibor.skuta@img.cas.cz">Ctibor Škuta</a>
 * @author <a href="mailto:petr.bartunek@img.cas.cz">Petr Bartůněk</a>
 * @author <a href="mailto:svozild@vscht.cz">Daniel Svozil</a>
-* @version 1.2.0
+* @version dev
 * @category 1
 * @license InCHlib - Interactive Cluster Heatmap Library http://openscreen.cz/software/inchlib Copyright 2014, Ctibor Škuta, Petr Bartůněk, Daniel Svozil Licensed under the MIT license.
 * 
@@ -43,8 +43,8 @@
 * @requires <a href='http://code.jquery.com/jquery-2.0.3.min.js'>jQuery Core 2.0.3</a>
 * @dependency <script language="JavaScript" type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
 * 
-* @requires <a href='http://kineticjs.com/'>KineticJS 5.1.0</a>
-* @dependency <script language="JavaScript" type="text/javascript" src="http://openscreen.cz/software/inchlib/static/js/kinetic-v5.1.0.min.js"></script>
+* @requires <a href='https://cdn.rawgit.com/konvajs/konva/0.9.5/konva.min.js'>KonvaJS 0.9.5</a>
+* @dependency <script language="JavaScript" type="text/javascript" src="https://cdn.rawgit.com/konvajs/konva/0.9.5/konva.min.js"></script>
 *
 * @param {Object} options An object with the options for the InCHlib component.
 *
@@ -205,7 +205,8 @@ var InCHlib;
           "alternative_data": false,
           "images_as_alternative_data": false,
           "images_path": {"dir": "", "ext": ""},
-          "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true}
+          "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true},
+          "unified_dendrogram_distance": false
       };
 
       self.update_settings(settings)
@@ -559,16 +560,16 @@ var InCHlib;
       };
 
       /**
-      * Default kineticjs objects references
+      * Default konvajs objects references
       * @name InCHlib#objects_ref
       */
       self.objects_ref = {
-          "tooltip_label": new Kinetic.Label({
+          "tooltip_label": new Konva.Label({
                               opacity: 1,
                               listening: false,
                            }),
 
-          "tooltip_tag": new Kinetic.Tag({
+          "tooltip_tag": new Konva.Tag({
                               fill: self.settings.label_color,
                               pointerWidth: 10,
                               pointerHeight: 10,
@@ -576,7 +577,7 @@ var InCHlib;
                               listening: false,
                           }),
       
-          "tooltip_text": new Kinetic.Text({
+          "tooltip_text": new Konva.Text({
                               fontFamily: self.settings.font,
                               fontSize: 12,
                               padding: 8,
@@ -587,7 +588,7 @@ var InCHlib;
                               lineHeight: 1.2,
                           }),
 
-          "node": new Kinetic.Line({
+          "node": new Konva.Line({
                               stroke: "grey",
                               strokeWidth: 2,
                               lineCap: 'sqare',
@@ -595,36 +596,36 @@ var InCHlib;
                               listening: false
                           }),
 
-          "node_rect" : new Kinetic.Rect({
+          "node_rect" : new Konva.Rect({
                               fill: "white",
                               opacity: 0,
                           }),
 
-          "icon_overlay": new Kinetic.Rect({
+          "icon_overlay": new Konva.Rect({
                               width: 32,
                               height: 32,
                               opacity: 0,
                           }),
 
-          "heatmap_value": new Kinetic.Text({
+          "heatmap_value": new Konva.Text({
                               fontFamily: self.settings.font,
                               fill: self.settings.heatmap_font_color,
                               fontStyle: "bold",
                               listening: false,
                           }),
 
-          "heatmap_line": new Kinetic.Line({
+          "heatmap_line": new Konva.Line({
                              lineCap: 'butt',
                              value: false,
                           }),
 
-          "column_header": new Kinetic.Text({
+          "column_header": new Konva.Text({
                               fontFamily: self.settings.font,
                               fontStyle: "bold",
                               fill: 'black',
                            }),
 
-          "count": new Kinetic.Text({
+          "count": new Konva.Text({
                           fontSize: 10,
                           fill: "#6d6b6a",
                           fontFamily: self.settings.font,
@@ -632,22 +633,22 @@ var InCHlib;
                           listening: false,
                        }),
 
-          "cluster_overlay": new Kinetic.Rect({
+          "cluster_overlay": new Konva.Rect({
                                   fill: "white",
                                   opacity: 0.5,
                               }),
 
-          "cluster_border": new Kinetic.Line({
+          "cluster_border": new Konva.Line({
                                   stroke: "black",
                                   strokeWidth: 1,
                                   dash: [6,2]
                               }),
 
-          "icon": new Kinetic.Path({
+          "icon": new Konva.Path({
                       fill: "grey",
                   }),
 
-          "rect_gradient": new Kinetic.Rect({
+          "rect_gradient": new Konva.Rect({
                               x: 0,
                               y: 80,
                               width: 100,
@@ -658,7 +659,7 @@ var InCHlib;
                               strokeWidth: "1px"
                           }),
 
-          "image": new Kinetic.Image({
+          "image": new Konva.Image({
                       stroke: "#D2D2D2",
                       strokeWidth: 1
                   }),
@@ -725,6 +726,13 @@ var InCHlib;
     }
     else{
       settings.alternative_data = false; 
+    }
+
+    if(self.data.feature_names !== undefined && self.data.feature_names.length > 0){
+      self.settings.heatmap_header = true;
+    }
+    else{
+      self.settings.heatmap_header = false;
     }
 
     self._update_user_settings(settings);
@@ -1067,7 +1075,7 @@ var InCHlib;
           self.footer_height = 150;
       }
 
-      self.stage = new Kinetic.Stage({
+      self.stage = new Konva.Stage({
           container: self.settings.target,
       });
 
@@ -1110,8 +1118,8 @@ var InCHlib;
 
   InCHlib.prototype._draw_dendrogram_layers = function(){
     var self = this;
-    self.cluster_layer = new Kinetic.Layer();
-    self.dendrogram_hover_layer = new Kinetic.Layer();
+    self.cluster_layer = new Konva.Layer();
+    self.dendrogram_hover_layer = new Konva.Layer();
     self.stage.add(self.cluster_layer, self.dendrogram_hover_layer);
 
     self.cluster_layer.on("click", function(evt){
@@ -1121,9 +1129,32 @@ var InCHlib;
     });
   };
 
+  InCHlib.prototype._get_node_levels = function(nodes){
+    var self = this;
+
+    for(var i = 0, keys=Object.keys(nodes), len=keys.length; i<len; i++){
+      var key = keys[i];
+      var level = 1
+      if(nodes[key].count == 1){
+        nodes[key].level = level;
+        level++;
+
+        var node = nodes[key];
+        while("parent" in node){
+          var parent_id = node.parent;
+          if(nodes[parent_id].level == undefined || nodes[parent_id].level < level){
+            nodes[parent_id].level = level;
+          }
+          level++;
+          node = nodes[parent_id];
+        }
+      }
+    }
+  }
+
   InCHlib.prototype._draw_row_dendrogram = function(node_id){
     var self = this;
-      self.dendrogram_layer = new Kinetic.Layer();
+      self.dendrogram_layer = new Konva.Layer();
       var node = self.data.nodes[node_id];
       var count = node.count;
 
@@ -1145,6 +1176,11 @@ var InCHlib;
           current_left_count = self.data.nodes[node.left_child].count;
           current_right_count = self.data.nodes[node.right_child].count;
       }
+      if(self.settings.unified_dendrogram_distance){
+        self._get_node_levels(self.data.nodes);
+        self.unified_distance_step = self.data.nodes[node_id].distance/self.data.nodes[node_id].level;
+      }
+
       self._draw_row_dendrogram_node(node_id, node, current_left_count, current_right_count, 0, y);
       self.middle_item_count = (self.min_item_count+self.max_item_count)/2;
       self._draw_distance_scale(node.distance);
@@ -1167,19 +1203,34 @@ var InCHlib;
 
   InCHlib.prototype._draw_row_dendrogram_node = function(node_id, node, current_left_count, current_right_count, x, y){
     var self = this;
-      if(node.count != 1){
+      if(node.count > 1){
           var node_neighbourhood = self._get_node_neighbourhood(node, self.data.nodes);
           var right_child = self.data.nodes[node.right_child];
           var left_child = self.data.nodes[node.left_child];
           var y1 = self._get_y1(node_neighbourhood, current_left_count, current_right_count);
           var y2 = self._get_y2(node_neighbourhood, current_left_count, current_right_count);
-          var x1 = self._hack_round(self.distance - self.distance_step*node.distance);
-          x1 = (x1 == 0)? 2: x1;
+          var left_distance = self.distance;
+          var right_distance = self.distance;
 
-          
+          if(self.settings.unified_dendrogram_distance){
+            var x1 = self._hack_round(self.distance - node.level*self.distance_step*self.unified_distance_step);
+            
+            if(self.data.nodes[node.left_child].count > 1){
+              left_distance = self.distance - self.data.nodes[node.left_child].level*self.distance_step*self.unified_distance_step;
+            }
+
+            if(self.data.nodes[node.right_child].count > 1){
+              right_distance = self.distance - self.data.nodes[node.right_child].level*self.distance_step*self.unified_distance_step;
+            }
+          }
+          else{
+            var x1 = self._hack_round(self.distance - self.distance_step*node.distance); 
+            left_distance = self.distance - self.distance_step*self.data.nodes[node.left_child].distance;
+            right_distance = self.distance - self.distance_step*self.data.nodes[node.right_child].distance;
+
+          }
+          x1 = (x1 == 0)? 2: x1;          
           var x2 = x1;
-          var left_distance = self.distance - self.distance_step*self.data.nodes[node.left_child].distance;
-          var right_distance = self.distance - self.distance_step*self.data.nodes[node.right_child].distance;
 
           if(right_child.count == 1){
               y2 = y2 + self.pixels_for_leaf/2;
@@ -1209,8 +1260,8 @@ var InCHlib;
 
   InCHlib.prototype._draw_stage_layer = function(){
     var self = this;
-      self.stage_layer = new Kinetic.Layer();
-      var stage_rect = new Kinetic.Rect({
+      self.stage_layer = new Konva.Layer();
+      var stage_rect = new Konva.Rect({
                                   x: 0,
                                   y: 0,
                                   width: self.settings.width,
@@ -1231,7 +1282,7 @@ var InCHlib;
 
   InCHlib.prototype._draw_column_dendrogram = function(node_id){
     var self = this;
-      self.column_dendrogram_layer = new Kinetic.Layer();
+      self.column_dendrogram_layer = new Konva.Layer();
       self.column_x_coordinates = {};
       var node = self.column_dendrogram.nodes[node_id];
       self.current_column_count = node.count;
@@ -1527,8 +1578,8 @@ var InCHlib;
       }
 
       var heatmap_row, row_id, col_number, col_label, row_values, y;
-      self.heatmap_layer = new Kinetic.Layer();
-      self.heatmap_overlay = new Kinetic.Layer();
+      self.heatmap_layer = new Konva.Layer();
+      self.heatmap_overlay = new Konva.Layer();
 
       self.current_draw_values = true;
       self.max_value_length = self._get_max_value_length();
@@ -1564,14 +1615,14 @@ var InCHlib;
           self._draw_row_ids();
       }
 
-      self.highlighted_rows_layer = new Kinetic.Layer();
+      self.highlighted_rows_layer = new Konva.Layer();
       self.stage.add(self.heatmap_layer, self.heatmap_overlay, self.highlighted_rows_layer);
 
       self.highlighted_rows_layer.moveToTop();
       self.row_overlay = self.objects_ref.heatmap_line.clone();
       self.column_overlay = self.objects_ref.heatmap_line.clone();
 
-      self.heatmap_layer.on("mouseleave", function(evt){
+      self.heatmap_layer.on("mouseout", function(evt){
           self.last_header = null;
           self.heatmap_overlay.destroyChildren();
           self.heatmap_overlay.draw();
@@ -1582,7 +1633,7 @@ var InCHlib;
   InCHlib.prototype._draw_heatmap_row = function(node_id, x1, y1){
     var self = this;
       var node = self.data.nodes[node_id];
-      var row = new Kinetic.Group({id:node_id});
+      var row = new Konva.Group({id:node_id});
       var x2, y2, color, line, value, text, text_value, col_index;
       
       for (var i = 0, len = self.on_features["data"].length; i < len; i++){
@@ -1733,7 +1784,7 @@ var InCHlib;
   
   InCHlib.prototype._draw_column_metadata_row = function(data, row_index, x1, y1){
     var self = this;
-      var row = new Kinetic.Group({"class": "column_metadata"});
+      var row = new Konva.Group({"class": "column_metadata"});
       var x2, y2, color, line, value, text, text_value, width, col_index;
       var str2num = (self.column_metadata_descs[row_index]["str2num"] === undefined)?false:true;
 
@@ -1837,6 +1888,8 @@ var InCHlib;
         leaf_id = self.heatmap_array[i][0];
         objects = self.data.nodes[leaf_id].objects;
         if(objects.length > 1){
+            self.settings.draw_row_ids = false;
+            self.right_margin = 100;
             return;
         }
         values.push(objects[0]);
@@ -1848,7 +1901,7 @@ var InCHlib;
     }
 
     if(self.settings.fixed_row_id_size){
-      var test = new Kinetic.Text({
+      var test = new Konva.Text({
                               fontFamily: self.settings.font,
                               fontSize: self.settings.fixed_row_id_size,
                               fontStyle: "italic",
@@ -1872,10 +1925,10 @@ var InCHlib;
   InCHlib.prototype._draw_heatmap_header = function(){
     var self = this;
     if(self.settings.heatmap_header && self.header.length > 0){
-      self.header_layer = new Kinetic.Layer();
+      self.header_layer = new Konva.Layer();
       var count = self._hack_size(self.leaves_y_coordinates);
-      var y = (self.settings.column_dendrogram && self.heatmap_header)? self.header_height+(self.pixels_for_leaf*count) + 10 + self.column_metadata_height: self.header_height - 20;
-      var rotation = (self.settings.column_dendrogram && self.heatmap_header) ? 45 : -45;
+      var y = (self.settings.column_dendrogram && self.heatmap_header)? self.header_height+(self.pixels_for_leaf*count) + 10 + self.column_metadata_height: self.header_height - 5;
+      var rotation = (self.settings.column_dendrogram && self.heatmap_header) ? 90 : -90;
       var distance_step = 0;
       var x, i, column_header, key;
       var current_headers = [];
@@ -1892,19 +1945,19 @@ var InCHlib;
       }
       var max_text_length = self._get_max_length(current_headers);
       var font_size = self._get_font_size(max_text_length, self.header_height, self.pixels_for_dimension, 16);
-      if(font_size < 8){
+      if(font_size < 6){
           return;
       }
       
       for(i = 0, len = current_headers.length; i<len; i++){
-        x = self.heatmap_distance+distance_step*self.pixels_for_dimension+self.pixels_for_dimension/2;
+        x = self.heatmap_distance+distance_step*self.pixels_for_dimension+self.pixels_for_dimension/2 - font_size/3;
         column_header = self.objects_ref.column_header.clone({
                 x: x,
                 y: y,
                 text: current_headers[i],
                 position_index: i,
                 fontSize: font_size,
-                rotationDeg: rotation,
+                rotation: rotation,
         });
         self.header_layer.add(column_header);
         distance_step++;
@@ -1966,19 +2019,19 @@ var InCHlib;
       var y2 = y1;
       var x1 = 0;
       var x2 = self.distance;
-      var path = new Kinetic.Line({
+      var path = new Konva.Line({
           points: [x1, y1, x2, y2],
           stroke: "black",
           listening: false,
-      })
+      });
 
-      var circle = new Kinetic.Circle({
+      var circle = new Konva.Circle({
           x: x2, 
           y: y2,
           radius: 3,
           fill: "black",
           listening: false,
-      })
+      });
 
       var number = 0;
       var marker_tail = 3;
@@ -1988,7 +2041,7 @@ var InCHlib;
       var marker_distance_step = self._hack_round(self.distance_step*marker_number_distance);
       var marker_counter = 0;
 
-      var distance_number = new Kinetic.Text({
+      var distance_number = new Konva.Text({
               x: 0,
               y: y1-20,
               text: distance,
@@ -2008,7 +2061,7 @@ var InCHlib;
       var path;
       if(marker_number_distance > 0.1){
           while(marker_distance > 0){
-              path = new Kinetic.Line({
+              path = new Konva.Line({
                   points: [marker_distance, (y1-marker_tail), marker_distance, (y2+marker_tail)],
                   stroke: "black",
                   listening: false,
@@ -2028,7 +2081,7 @@ var InCHlib;
 
   InCHlib.prototype._draw_navigation = function(){
     var self = this;
-      self.navigation_layer = new Kinetic.Layer();
+      self.navigation_layer = new Konva.Layer();
       var x = 0;
       var y = 10;
 
@@ -2443,7 +2496,7 @@ var InCHlib;
 
   InCHlib.prototype._draw_cluster_layer = function(path_id){
     var self = this;
-      self.row_cluster_group = new Kinetic.Group();
+      self.row_cluster_group = new Konva.Group();
       var visible = self._get_visible_count();
       var count = self.data.nodes[path_id].count;
       var x = self.distance - 30;
@@ -2515,7 +2568,7 @@ var InCHlib;
 
   InCHlib.prototype._draw_column_cluster_layer = function(path_id){
     var self = this;
-      self.column_cluster_group = new Kinetic.Group();
+      self.column_cluster_group = new Konva.Group();
       var count = self.column_dendrogram.nodes[path_id].count;      
       var x = self.settings.width - 85;
       var y = self.header_height - 25;
@@ -2810,7 +2863,7 @@ var InCHlib;
 
   InCHlib.prototype._draw_vertical_path = function(path_id, x1, y1, x2, y2, left_distance, right_distance){
     var self = this;
-      var path_group = new Kinetic.Group({});
+      var path_group = new Konva.Group({});
       var path = self.objects_ref.node.clone({points: [x1, left_distance, x1, y1, x2, y2, x2, right_distance], id: "col" + path_id,})
       var path_rect = self.objects_ref.node_rect.clone({x: x2-1,
                                                             y: y1-1,
@@ -2827,7 +2880,7 @@ var InCHlib;
 
   InCHlib.prototype._draw_horizontal_path = function(path_id, x1, y1, x2, y2, left_distance, right_distance){
     var self = this;
-      var path_group = new Kinetic.Group({});
+      var path_group = new Konva.Group({});
       var path = self.objects_ref.node.clone({points: [left_distance, y1, x1, y1, x2, y2, right_distance, y2],
                                                   id: path_id});
 
