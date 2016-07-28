@@ -206,7 +206,8 @@ var InCHlib;
           "images_as_alternative_data": false,
           "images_path": {"dir": "", "ext": ""},
           "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true},
-          "unified_dendrogram_distance": false
+          "unified_dendrogram_distance": false,
+          "row_id_in_tooltip": false
       };
 
       self.update_settings(settings)
@@ -3689,7 +3690,9 @@ var InCHlib;
   }
 
   InCHlib.prototype._draw_col_label = function(evt){
+
       var self = this;
+      var row_id = self.data.nodes[evt.target.parent.getAttr("id")].objects.join(", ");
       var i, line;
       var attrs = evt.target.attrs;
       var points = attrs.points;
@@ -3704,7 +3707,6 @@ var InCHlib;
         header_type2value["cm"] = self.column_metadata_header[column[1]];
       }
       
-      var value = attrs.value;
       var header = header_type2value[column[0]];
 
       if(header !== self.last_column){
@@ -3720,10 +3722,16 @@ var InCHlib;
       }
       
       self.events.cell_mouseover({"value": value, "header": header}, evt);
+      var values = [];
+      if(self.settings.row_id_in_tooltip){
+        values.push(row_id);
+      }
 
       if(header !== undefined){
-          value = [header, value].join("\n");
+        values.push(header);
       }
+      values.push(attrs.value);
+      var value = values.join("\n");
 
       var tooltip = self.objects_ref.tooltip_label.clone({x: x, y:y, id: "col_label",});
       tooltip.add(self.objects_ref.tooltip_tag.clone({pointerDirection: 'down'}), self.objects_ref.tooltip_text.clone({text: value}));
