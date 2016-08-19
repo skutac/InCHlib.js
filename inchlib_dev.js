@@ -3209,7 +3209,21 @@ var InCHlib;
     }
 
     function download_image(dataUrl){
-      $('<a download="inchlib" href="'+ dataUrl + '"></a>')[0].click();
+      var fileName = 'inchlib.png';
+
+      if ('msToBlob' in self.stage) { // IE10+
+        var blob = self.stage.msToBlob();
+        navigator.msSaveBlob(blob, fileName);
+      } else {
+        var a = document.createElement('a');
+        a.setAttribute('href', dataUrl);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('download', fileName);
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     };
     
     function open_image(dataUrl){
