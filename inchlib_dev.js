@@ -764,6 +764,7 @@ var InCHlib;
     self.data = self.json.data;
     
     var settings = {};
+    console.log(json)
     if(json["metadata"] !== undefined){
       self.metadata = json.metadata;
       settings.metadata = true;
@@ -793,7 +794,7 @@ var InCHlib;
       settings.alternative_data = false; 
     }
 
-    if(self.data.feature_names !== undefined && self.data.feature_names.length > 0){
+    if((self.data.feature_names !== undefined && self.data.feature_names.length > 0)||(self.metadata !== undefined && self.metadata.feature_names !== undefined && self.metadata.feature_names.length > 0)){
       self.settings.heatmap_header = true;
     }
     else{
@@ -912,20 +913,19 @@ var InCHlib;
 
   InCHlib.prototype._get_min_max_middle = function(data){
     var self = this;
-      var i, len;
-      var min_max_middle = [];
-      var all = [];
+    var all = [];
 
-      for(i = 0, len = data.length; i<len; i++){
-          all = all.concat(data[i].filter(function(x){return x !== null}));
-      }
+    for(var i = 0, len = data.length; i<len; i++){
+        all = all.concat(data[i].filter(function(x){return x !== null}));
+    }
 
-      var len = all.length;
-      all.sort(function(a,b){return a - b});
-      min_max_middle.push((self.settings.min_percentile > 0)?all[self._hack_round(len*self.settings.min_percentile/100)]:Math.min.apply(null, all));
-      min_max_middle.push((self.settings.max_percentile < 100)?all[self._hack_round(len*self.settings.max_percentile/100)]:Math.max.apply(null, all));
-      min_max_middle.push((self.settings.middle_percentile != 50)?all[self._hack_round(len*self.settings.middle_percentile/100)]:all[self._hack_round((len-1)/2)]);
-      return min_max_middle;
+    var len = all.length;
+    all.sort(function(a,b){return a - b});
+    
+    var min = (self.settings.min_percentile > 0)?all[self._hack_round(len*self.settings.min_percentile/100)]:Math.min.apply(null, all);
+    var max = (self.settings.max_percentile < 100)?all[self._hack_round(len*self.settings.max_percentile/100)]:Math.max.apply(null, all)
+    var middle = (self.settings.middle_percentile != 50)?all[self._hack_round(len*self.settings.middle_percentile/100)]:all[self._hack_round((len-1)/2)]
+    return [min, max, middle];
   }
 
   InCHlib.prototype._get_data_min_max_middle = function(data, axis){
@@ -964,10 +964,12 @@ var InCHlib;
           if(self._is_number(columns[i][0])){
               columns[i] = columns[i].map(parseFloat);
               columns[i].sort(function(a,b){return a - b});
+
               len = columns[i].length;
-              max = (self.settings.max_percentile < 100)?columns[i][self._hack_round(len*self.settings.max_percentile/100)]:Math.max.apply(null, columns[i]);
+              max = (self.settings.max_percentile < 100)?columns[i][self._hack_round(len*self.settings.max_percentile/100) - 1]:Math.max.apply(null, columns[i]);
               min = (self.settings.min_percentile > 0)?columns[i][self._hack_round(len*self.settings.min_percentile/100)]:Math.min.apply(null, columns[i]);
               middle = (self.settings.middle_percentile != 50)?columns[i][self._hack_round(len*self.settings.middle_percentile/100)]:columns[i][self._hack_round((len-1)/2)];
+              
               data2descs[i] = {"min": min, "max": max, "middle": middle};
           }
           else{
@@ -3354,7 +3356,7 @@ var InCHlib;
       scale_divs = scales_div.find(".color_scale");
     }
     else{
-      scales_div = $("<div class='color_scales'></div>");
+      scales_div = $("<div class='color_scales'></div>").css({"z-index": 10});
       var scale, color_1, color_2, color_3, key;
 
       for(var i = 0, keys = Object.keys(self.colors), len = keys.length; i < len; i++){
