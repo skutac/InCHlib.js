@@ -1497,7 +1497,6 @@ var InCHlib;
         }
         else{
           self.distance = self._hack_round((self.settings.width - self.heatmap_width)/2);
-          console.log(self.distance);
           self.right_margin = self.distance;
           self.heatmap_distance = self.distance;
         }
