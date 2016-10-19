@@ -1458,7 +1458,9 @@ var InCHlib;
 
   InCHlib.prototype._adjust_horizontal_sizes = function(dimensions){
       var self = this;
-      self.right_margin = 100;
+      if(self.right_margin === undefined){
+        self.right_margin = 100;
+      }
       if(dimensions === undefined){
         dimensions = self._get_visible_count();
       }
@@ -1480,7 +1482,6 @@ var InCHlib;
         self.heatmap_distance = self.distance + self.dendrogram_heatmap_distance;
       }
       else{
-        // self.right_margin = self.right_margin/2;
         self.heatmap_width = self.settings.width - self.right_margin*2;
         self.distance = self.right_margin;
         self.heatmap_distance = self.distance;
@@ -1986,9 +1987,9 @@ var InCHlib;
       self.row_id_size = self.settings.fixed_row_id_size;
       self.right_margin = 20 + test.width();
 
-      if(this.right_margin < 100){
-        self.right_margin = 100;
-      }
+      // if(this.right_margin < 100){
+      //   self.right_margin = 100;
+      // }
     }
     else{
       self.row_id_size = self._get_font_size(max_length, 85, self.pixels_for_leaf, 10);
