@@ -1947,7 +1947,7 @@ var InCHlib;
               x: x,
               y: self._hack_round(object_y[i][1] - self.row_id_size/2),
               fontSize: self.row_id_size,
-              text: object_y[i][0],
+              text: object_y[i][0].toString(),
               fontStyle: 'italic',
               fill: "gray"
           });
