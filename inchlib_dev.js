@@ -162,7 +162,6 @@ var InCHlib;
       var self = this;
       self.user_settings = settings;
       self.target_element = $("#" + settings.target);
-      var target_width = self.target_element.width();
       self.target_element.css({"position": "relative"});
 
       /**
@@ -180,7 +179,7 @@ var InCHlib;
           "column_metadata_row_height": 8,
           "column_metadata_colors": "RdLrBu",
           "max_height" : 800,
-          "width" : target_width,
+          "width" : "dynamic",
           "heatmap_colors" : "Greens",
           "heatmap_font_color" : "black",
           "heatmap_part_width" : 0.7,
@@ -211,6 +210,7 @@ var InCHlib;
       };
 
       self.update_settings(settings)
+
       self.settings.width = (settings.max_width && settings.max_width < target_width)?settings.max_width:self.settings.width;
       self.settings.heatmap_part_width = (self.settings.heatmap_part_width>0.9)?0.9:self.settings.heatmap_part_width;
 
@@ -3841,6 +3841,12 @@ var InCHlib;
       self.settings.navigation_toggle = navigation_toggle;
       $.extend(self.settings.navigation_toggle, settings_object.navigation_toggle);
     }
+
+    self.dynamic_width = false;
+    if(self.settings.width === "dynamic"){
+      self.dynamic_width = true;
+      self.settings.width = self.target_element.width();
+    }
   }
 
   /**
@@ -3848,6 +3854,11 @@ var InCHlib;
     */
   InCHlib.prototype.redraw = function(){
     var self = this;
+
+    if(self.dynamic_width){
+      self.settings.width = self.target_element.width();
+    }
+    
     self._delete_all_layers();
     self.draw();
   }
