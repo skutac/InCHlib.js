@@ -3845,6 +3845,9 @@ var InCHlib;
     self.dynamic_width = false;
     if(self.settings.width === "dynamic"){
       self.dynamic_width = true;
+      if(self.target_element.width() === 0){
+        self.target_element.css({"width": "100%"});
+      }
       self.settings.width = self.target_element.width();
     }
   }
