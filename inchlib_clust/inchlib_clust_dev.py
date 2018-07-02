@@ -8,6 +8,8 @@ import scipy.cluster.hierarchy as hcluster
 from sklearn import preprocessing
 from scipy import spatial
 
+import randomcolor
+
 LINKAGES = ["single", "complete", "average", "centroid", "ward", "median", "weighted"]
 RAW_LINKAGES = ["ward", "centroid"]
 DISTANCES = {"numeric": ["braycurtis", "canberra", "chebyshev", "cityblock", "correlation", "cosine", "euclidean", "mahalanobis", "minkowski", "seuclidean", "sqeuclidean"],
@@ -23,6 +25,7 @@ class Dendrogram():
         self.axis = clustering.clustering_axis
         self.clustering = clustering.clustering
         self.tree = hcluster.to_tree(self.clustering)
+        # print(list(hcluster.leaves_list(self.clustering)))
         self.data = clustering.data
         self.data_names = clustering.data_names
         self.header = clustering.header
@@ -108,11 +111,11 @@ class Dendrogram():
 
         self.compress = compress
         self.compressed_value = compressed_value
-        self.compress_cluster_treshold = 0
+        self.compress_cluster_threshold = 0
         if self.compress and self.compress >= 0:
-            self.compress_cluster_treshold = self.__get_distance_treshold__(compress)
-            print("Distance treshold for compression:", self.compress_cluster_treshold)
-            if self.compress_cluster_treshold >= 0:
+            self.compress_cluster_threshold = self.__get_distance_threshold__(compress)
+            print("Distance threshold for compression:", self.compress_cluster_threshold)
+            if self.compress_cluster_threshold >= 0:
                 self.__compress_data__()
         else:
             self.compress = False
@@ -126,13 +129,32 @@ class Dendrogram():
             column_dendrogram = hcluster.to_tree(self.cluster_object.column_clustering)            
             self.dendrogram["column_dendrogram"] = self.__get_column_dendrogram__()
 
+    def color_clusters(self, cluster_count):
+        """Color given number of clusters based on a dendrogram cut
+        
+        Arguments:
+            cluster_count {[int]} -- numer of clusters to color
+        """
+        if cluster_count > 1:
+            self.color_cluster_threshold = self.__get_distance_threshold__(cluster_count)
+            rand_color = randomcolor.RandomColor()
+            
+            to_color = []
+            for nodeid, node in self.dendrogram["data"]["nodes"].items():
+                if node["distance"] < self.color_cluster_threshold and self.dendrogram["data"]["nodes"].get(node["parent"], {"distance": 0})["distance"] > self.color_cluster_threshold:
+                    to_color.append(nodeid)
+
+            colors = rand_color.generate(count=len(to_color))
+            for i, nodeid in enumerate(to_color):
+                self.dendrogram["data"]["nodes"][nodeid]["color"] = colors[i]
+
     def __compress_data__(self):
         nodes = {}
         to_remove = set()
 
         compressed_value2fnc = {
-            "median": lambda values: [round(numpy.median(value), 3) for value in values],
-            "mean": lambda values: [round(numpy.average(value), 3) for value in values],
+            "median": lambda values: [round(numpy.median([v for v in value if v is not None]), 3) if len([v for v in value if v is not None]) else None for value in values],
+            "mean": lambda values: [round(numpy.average([v for v in value if v is not None]), 3) if len([v for v in value if v is not None]) else None for value in values],
         }
         
         for n in self.dendrogram["data"]["nodes"]:
@@ -143,7 +165,7 @@ class Dendrogram():
                 data = node["features"]
                 node_id = n
 
-                while self.dendrogram["data"]["nodes"][node["parent"]]["distance"] <= self.compress_cluster_treshold:
+                while self.dendrogram["data"]["nodes"][node["parent"]]["distance"] <= self.compress_cluster_threshold:
                     to_remove.add(node_id)
                     node_id = node["parent"]
                     node = self.dendrogram["data"]["nodes"][node_id]
@@ -194,8 +216,8 @@ class Dendrogram():
                 if "parent" in node:
                     parent_id = node["parent"]
 
-    def __get_distance_treshold__(self, cluster_count):
-        print("Calculating distance treshold for cluster compression...")
+    def __get_distance_threshold__(self, cluster_count):
+        print("Calculating distance threshold...")
         if cluster_count >= self.tree.count:
             return -1
         
@@ -618,6 +640,9 @@ def _process_(arguments):
 
     d = Dendrogram(c)
     d.create_cluster_heatmap(compress=arguments.compress, compressed_value=arguments.compressed_value, write_data=not arguments.dont_write_data)
+
+    if arguments.color_clusters > 1:
+        d.color_clusters(cluster_count=arguments.color_clusters)
     
     if arguments.metadata:
         d.add_metadata_from_file(metadata_file=arguments.metadata, delimiter=arguments.metadata_delimiter, header=arguments.metadata_header, metadata_compressed_value=arguments.metadata_compressed_value)
@@ -669,6 +694,7 @@ if __name__ == '__main__':
     parser.add_argument("-adcv", "--alternative_data_compressed_value", type=str, default="median", help="the resulted value from merged rows of alternative data when the data are compressed (median/mean/frequency)")
     parser.add_argument("-min", "--minify", default=False, help="minify the InCHlib format", action="store_true")
     parser.add_argument("-dump", "--json_dump", default=True, help="dump the InCHlib format as JSON", action="store_true")
+    parser.add_argument("-cc", "--color_clusters", type=int, default=0, help="color defined number of clusters")
     
     args = parser.parse_args()
     _process_(args)
