@@ -248,7 +248,7 @@ var InCHlib;
           "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true},
       };
 
-      self.update_settings(settings)
+      self.update_settings(settings);
       self.settings.width = (settings.max_width && settings.max_width < target_width)?settings.max_width:self.settings.width;
       self.settings.heatmap.relative_width = (self.settings.heatmap.relative_width>0.9)?0.9:self.settings.heatmap.relative_width;
 
@@ -793,8 +793,7 @@ var InCHlib;
 
   InCHlib.prototype._update_user_settings = function(settings){
     var self = this;
-    var updated_settings = deepmerge(self.user_settings, settings);
-    self.settings = deepmerge(self.settings, updated_settings);
+    self.update_settings(settings);
   }
 
   /**
@@ -808,14 +807,14 @@ var InCHlib;
     self.data = self.json.data;
     
     var settings = {"metadata": {}, "column_dendrogram": {}, "column_metadata": {}};
-    if(json["metadata"] !== undefined){
+    if(json["metadata"] !== undefined && self.settings.metadata.draw){
       self.metadata = json.metadata;
       settings.metadata.draw = true;
     }
     else{
       settings.metadata.draw = false;
     }
-    if(json["column_dendrogram"] !== undefined){
+    if(json["column_dendrogram"] !== undefined && self.settings.column_dendrogram.draw){
       self.column_dendrogram = json.column_dendrogram;
       settings.column_dendrogram.draw = true;
       settings.heatmap_header = {"settings": {"rotation": -1*self.settings.heatmap_header.settings.rotation}};
@@ -823,7 +822,7 @@ var InCHlib;
     else{
       settings.column_dendrogram.draw = false;
     }
-    if(json["column_metadata"] !== undefined){
+    if(json["column_metadata"] !== undefined && self.settings.column_metadata.draw){
       self.column_metadata = json.column_metadata;
       settings.column_metadata.draw = true;
     }
