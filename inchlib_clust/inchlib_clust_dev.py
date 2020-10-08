@@ -1,7 +1,7 @@
 #coding: utf-8
 from __future__ import print_function
 
-import csv, json, copy, re, argparse, os, urllib2
+import csv, json, copy, re, argparse, os, requests
 
 import numpy, scipy, fastcluster, sklearn, jsmin
 import scipy.cluster.hierarchy as hcluster
@@ -287,18 +287,21 @@ class Dendrogram():
         </body>
         </html>""".format(dendrogram_json)
 
-        lib2url = {"inchlib-1.1.0.js": "http://localhost:8000/static/js/inchlib-1.1.0.js",
-                    "jquery-2.0.3.min.js": "http://localhost:8000/static/js/jquery-2.0.3.min.js",
-                    "kinetic-v5.1.0.min.js": "http://localhost:8000/static/js/kinetic-v5.1.0.min.js"}
+        lib2url = {
+            "inchlib-1.1.0.js": "https://openscreen.cz/software/inchlib/static/js/inchlib-1.1.0.js",
+            "jquery-2.0.3.min.js": "https://openscreen.cz/software/inchlib/static/js/jquery-2.0.3.min.js",
+            "kinetic-v5.1.0.min.js": "https://openscreen.cz/software/inchlib/static/js/kinetic-v5.1.0.min.js"
+        }
         
         for lib, url in lib2url.items():
             try:
-                source = urllib2.urlopen(url)
-                source_html = source.read()
+                source = requests.get(url)
+                source_html = source.content
 
                 with open(os.path.join(htmldir, lib), "w") as output:
                     output.write(source_html)
-            except urllib2.URLError, e:
+            
+            except Exception as e:
                 raise Exception("\nCan't download file {}.\nPlease check your internet connection and try again.\nIf the error persists there can be something wrong with the InCHlib server.\n".format(url))
 
         with open(os.path.join(htmldir, "inchlib.html"), "w") as output:
@@ -361,7 +364,8 @@ class Dendrogram():
         return metadata, metadata_header
 
     def add_column_metadata(self, column_metadata, header=True):
-        """Adds column metadata in a form of list of lists (tuples). Column metadata doesn't have header row, first item in each row is used as label instead"""
+        """Adds column metadata in a form of list of lists (tuples). 
+        Column metadata doesn't have header row, first item in each row is used as label instead"""
         if header:
             self.column_metadata = [r[1:] for r in column_metadata]
             self.column_metadata_header = [r[0] for r in column_metadata]
@@ -449,7 +453,7 @@ class Dendrogram():
             for leaf_id, leaf in leaves.items():
                 try:
                     node2additional_data[leaf_id] = additional_data[leaf["objects"][0]]
-                except Exception, e:
+                except Exception as e:
                     continue
         else:
             compressed_value2fnc = {
@@ -463,7 +467,7 @@ class Dendrogram():
                 for item in leaves[leaf]["objects"]:
                     try:
                         objects.append(additional_data[item])
-                    except Exception, e:
+                    except Exception as e:
                         continue
 
                 cols = zip(*objects)
@@ -698,4 +702,4 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     _process_(args)
-    
+
