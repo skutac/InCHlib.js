@@ -8,7 +8,7 @@ import scipy.cluster.hierarchy as hcluster
 from sklearn import preprocessing
 from scipy import spatial
 
-import randomcolor
+# import randomcolor
 
 LINKAGES = ["single", "complete", "average", "centroid", "ward", "median", "weighted"]
 RAW_LINKAGES = ["ward", "centroid"]
@@ -533,9 +533,9 @@ class Cluster():
         
     def __impute_missing_values__(self, data):
         datatype2impute = {"numeric": {"strategy":"mean", 
-                                        "value": lambda x: round(float(value), 3)}, 
+                                        "value": lambda value: round(float(value), 3)}, 
                            "binary": {"strategy":"most_frequent", 
-                                      "value": lambda x: int(value)}
+                                      "value": lambda value: int(value)}
                            }
 
         if not self.datatype in DISTANCES:
@@ -553,6 +553,8 @@ class Cluster():
         #error when using median strategy - minus one dimension in imputed data... omg
         imputed_data = [list(row) for row in imputer.fit_transform(self.data)]
         imputed_data = [[datatype2impute[self.datatype]["value"](value) for value in row] for row in imputed_data]
+
+        print(len(self.data[0]), len(imputed_data[0]))
         return imputed_data, missing_values_indexes
         
     def normalize_data(self, feature_range=(0,1), write_original=False):
