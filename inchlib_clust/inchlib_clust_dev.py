@@ -503,17 +503,18 @@ class Cluster():
     def __init__(self):
         self.write_original = False
 
-    def read_csv(self, filename, delimiter=",", header=False, missing_value=False, datatype="numeric"):
+    def read_csv(self, filename, delimiter=",", header=False, missing_values=False, datatype="numeric"):
         """Reads data from the CSV file"""
         self.filename = filename
         csv_reader = csv.reader(open(self.filename, "r"), delimiter=delimiter)
         rows = [row for row in csv_reader]
-        self.read_data(rows, header, missing_value, datatype)
+        self.read_data(rows, header, missing_values, datatype)
 
-    def read_data(self, rows, header=False, missing_value=False, datatype="numeric"):
+    def read_data(self, rows, header=False, missing_values=False, datatype="numeric"):
         """Reads data in a form of list of lists (tuples)"""
         self.datatype = datatype
-        self.missing_value = missing_value
+        self.missing_values = missing_values
+        print(self.missing_values)
         self.header = header
         data_start = 0
 
@@ -525,7 +526,7 @@ class Cluster():
         self.data = numpy.array([row[1:] for row in rows[data_start:]])
         self.original_data = copy.deepcopy(self.data)
 
-        if not self.missing_value is False:
+        if not self.missing_values is False:
             self.data, self.missing_values_indexes = self.__impute_missing_values__(self.data)
             self.original_data = self.__return_missing_values__(copy.deepcopy(self.data), self.missing_values_indexes)
 
@@ -545,17 +546,16 @@ class Cluster():
         missing_values_indexes = []
         
         for i, row in enumerate(self.data):
-            missing_values_indexes.append([j for j, v in enumerate(row) if v == self.missing_value])
+            missing_values_indexes.append([j for j, v in enumerate(row) if v in self.missing_values])
 
-            # for j, value in enumerate(row):
-            #     if value == self.missing_value:
-            #         data[i][j] = numpy.nan
+            for j, value in enumerate(row):
+                if value in self.missing_values:
+                    data[i][j] = numpy.nan
 
-        imputer = SimpleImputer(missing_values=self.missing_value, strategy=datatype2impute[self.datatype]["strategy"])
+        imputer = SimpleImputer(missing_values=numpy.nan, strategy=datatype2impute[self.datatype]["strategy"])
         imputed_data = [list(row) for row in imputer.fit_transform(self.data)]
         imputed_data = [[datatype2impute[self.datatype]["value"](value) for value in row] for row in imputed_data]
 
-        print(len(self.data[0]), len(imputed_data[0]))
         return imputed_data, missing_values_indexes
         
     def normalize_data(self, feature_range=(0,1), write_original=False):
@@ -591,7 +591,7 @@ class Cluster():
             self.clustering = fastcluster.linkage(self.distance_vector, method=str(row_linkage))
 
 
-        if not self.missing_value is False:
+        if not self.missing_values is False:
             self.data = self.__return_missing_values__(self.data, self.missing_values_indexes)
         self.column_clustering = []
 
@@ -611,23 +611,23 @@ class Cluster():
 
     def __cluster_columns__(self, column_distance, column_linkage):
         self.data = [list(col) for col in zip(*self.data)]
-        if not self.missing_value is False:
+        if not self.missing_values is False:
             self.data, missing_values_indexes = self.__impute_missing_values__(self.data)
         
         self.column_clustering = fastcluster.linkage(self.data, method=column_linkage, metric=column_distance)
         self.data_order = hcluster.leaves_list(self.column_clustering)
 
-        if not self.missing_value is False:
+        if not self.missing_values is False:
             self.data = self.__return_missing_values__(self.data, missing_values_indexes)
         
-        self.data = zip(*self.data)
+        self.data = list(zip(*self.data))
         self.data = self.__reorder_data__(self.data, self.data_order)
         self.original_data = self.__reorder_data__(self.original_data, self.data_order)
         if self.header:
             self.header = self.__reorder_data__([self.header], self.data_order)[0]
 
     def __reorder_data__(self, data, order):
-        for i in xrange(len(data)):
+        for i in range(len(data)):
             reordered_data = []
             for j in order:
                 reordered_data.append(data[i][j])
@@ -694,7 +694,7 @@ if __name__ == '__main__':
     parser.add_argument("-cm", "--column_metadata", type=str, default=None, help="csv(text) metadata file with delimited values without header")
     parser.add_argument("-cmd", "--column_metadata_delimiter", type=str, default=",", help="delimiter of values in column metadata file")
     parser.add_argument("-cmh", "--column_metadata_header", default=False, help="whether the first column of the column metadata is the row label ('header')", action="store_true")
-    parser.add_argument("-mv", "--missing_values", type=str, default=False, help="define the string representating missing values in the data")
+    parser.add_argument("-mv", "--missing_values", type=str, nargs="+", default=False, help="define the string representating missing values in the data")
     parser.add_argument("-ad", "--alternative_data", type=str, default=None, help="csv(text) alternative data file with delimited values")
     parser.add_argument("-adh", "--alternative_data_header", default=False, help="whether the first row of alternative data file is a header", action="store_true")
     parser.add_argument("-add", "--alternative_data_delimiter", type=str, default=",", help="delimiter of values in alternative data file")

@@ -248,7 +248,7 @@ var InCHlib;
             "colors": "Reds"
           },
           "max_height" : 800,
-          "width" : "dynamic",
+          "width" : 1600,
           "highlight_colors" : "Oranges",
           "highlighted_rows" : [],
           "label_color": "#9E9E9E",
