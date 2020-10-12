@@ -5,7 +5,8 @@ import csv, json, copy, re, argparse, os, requests
 
 import numpy, scipy, fastcluster, sklearn, jsmin
 import scipy.cluster.hierarchy as hcluster
-from sklearn import preprocessing
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.impute import SimpleImputer
 from scipy import spatial
 
 # import randomcolor
@@ -521,7 +522,7 @@ class Cluster():
             data_start = 1
         
         self.data_names = [str(row[0]) for row in rows[data_start:]]
-        self.data = [row[1:] for row in rows[data_start:]]
+        self.data = numpy.array([row[1:] for row in rows[data_start:]])
         self.original_data = copy.deepcopy(self.data)
 
         if not self.missing_value is False:
@@ -546,11 +547,11 @@ class Cluster():
         for i, row in enumerate(self.data):
             missing_values_indexes.append([j for j, v in enumerate(row) if v == self.missing_value])
 
-            for j, value in enumerate(row):
-                if value == self.missing_value:
-                    data[i][j] = numpy.nan
-        imputer = preprocessing.Imputer(missing_values="NaN", strategy=datatype2impute[self.datatype]["strategy"])
-        #error when using median strategy - minus one dimension in imputed data... omg
+            # for j, value in enumerate(row):
+            #     if value == self.missing_value:
+            #         data[i][j] = numpy.nan
+
+        imputer = SimpleImputer(missing_values=self.missing_value, strategy=datatype2impute[self.datatype]["strategy"])
         imputed_data = [list(row) for row in imputer.fit_transform(self.data)]
         imputed_data = [[datatype2impute[self.datatype]["value"](value) for value in row] for row in imputed_data]
 
@@ -561,7 +562,7 @@ class Cluster():
         """Normalizes data to a scale from 0 to 1. When write_original is set to True, 
         the normalized data will be clustered, but original data will be written to the heatmap."""
         self.write_original = write_original
-        min_max_scaler = preprocessing.MinMaxScaler(feature_range)
+        min_max_scaler = MinMaxScaler(feature_range)
         self.data = min_max_scaler.fit_transform(self.data)
         self.data = [[round(v, 3) for v in row] for row in self.data]
 
