@@ -1299,6 +1299,7 @@ var InCHlib;
 
     var node_options = {node_id: node_id, current_left_count: current_left_count, current_right_count: current_right_count, x: 0, y: y};
     var nodes = [[node, node_options]];
+    
     while(nodes.length > 0){
       var to_draw = [];
       for(var i = 0, len=nodes.length; i<len; i++){
@@ -2037,25 +2038,26 @@ var InCHlib;
     }
 
     var x = self.distance + self._get_visible_count()*self.pixels_for_dimension + 15;
+    console.log(self.row_id_size)
     for(i = 0; i < object_y.length; i++){
-        /*self.target_element.append($("<div>" + object_y[i][0].toString() + "</div>")
+        self.target_element.append($("<div>" + object_y[i][0].toString() + "</div>")
           .css({
             "position": "absolute", "top": self._hack_round(object_y[i][1] - self.row_id_size/2),
             "left": x,
             "font-style": "italic",
             "font-size": self.row_id_size,
             "color": "gray"
-          }));*/
+          }));
         
-        text = self.objects_ref.heatmap_value.clone({
-            x: x,
-            y: self._hack_round(object_y[i][1] - self.row_id_size/2),
-            fontSize: self.row_id_size,
-            text: object_y[i][0].toString(),
-            fontStyle: 'italic',
-            fill: "gray"
-        });
-        self.heatmap_layer.add(text);
+        // text = self.objects_ref.heatmap_value.clone({
+        //     x: x,
+        //     y: self._hack_round(object_y[i][1] - self.row_id_size/2),
+        //     fontSize: self.row_id_size,
+        //     text: object_y[i][0].toString(),
+        //     fontStyle: 'italic',
+        //     fill: "gray"
+        // });
+        // self.heatmap_layer.add(text);
     }
       
   }
@@ -2101,7 +2103,7 @@ var InCHlib;
       // }
     }
     else{
-      self.row_id_size = self._get_font_size(max_length, 85, self.pixels_for_leaf, 10);
+      self.row_id_size = self._get_font_size(max_length, 100, self.pixels_for_leaf, 10);
       self.right_margin = 100;
     }
     
@@ -3291,94 +3293,100 @@ var InCHlib;
 
   InCHlib.prototype._export_icon_click = function(){
     var self = this;
-    var export_menu = self.target_element.find(".export_menu");
-    var overlay = self._draw_target_overlay();
-
-    if(export_menu.length){
-      export_menu.fadeIn("fast");
-    }
-    else{
-      export_menu = $("<div class='export_menu'><div><button type='submit' data-action='open'>Show image</button></div><div><button type='submit' data-action='save'>Save image</button></div></div>");
-      self.target_element.append(export_menu);
-      export_menu.css({"position": "absolute",
-                      "top": 45,
-                      "left": self.settings.width - 125,
-                      "font-size": "12px",
-                      "border": "solid #D2D2D2 1px",
-                      "border-radius": "5px",
-                      "padding": "2px",
-                      "background-color": "white"});
-
-      var buttons = export_menu.find("button");
-      buttons.css({"padding-top": "7px", "padding-bottom": "5px", "padding-right": "8px", "padding-left": "8px", "color": "white", "border": "solid #D2D2D2 1px", "width": "100%", "background-color": "#2171b5", "font-weight": "bold"});  
-
-      buttons.hover(
-        function(){$(this).css({"cursor": "pointer", "opacity": 0.7})},
-        function(){$(this).css({"opacity": 1})}
-      );
-
-      overlay.click(function(){
-        export_menu.fadeOut("fast");
-        overlay.fadeOut("fast");
-      });
-
-      buttons.click(function(){
-        var action = $(this).attr("data-action");
-        var zoom = 3;
-        var width = self.stage.width();
-        var height = self.stage.height();
-        var loading_div = $("<h3 style='margin-top: 100px; margin-left: 100px; width: " + width + "px; height: " + height + "px;'>Loading...</h3>");
-        self.target_element.after(loading_div);
-        self.target_element.hide();
-        self.stage.width(width*zoom);
-        self.stage.height(height*zoom);
-        self.stage.scale({x: zoom, y:zoom});
-        self.stage.draw();
-        self.navigation_layer.hide();
-        self.stage.toDataURL({
-          quality: 1,
-          callback: function(dataUrl){
-            if(action === "open"){
-              open_image(dataUrl);
-            }
-            else{
-              download_image(dataUrl);
-            }
-            self.stage.width(width);
-            self.stage.height(height);
-            self.stage.scale({x: 1, y:1});
-            self.stage.draw();
-            loading_div.remove();
-            self.target_element.show();
-            self.navigation_layer.show();
-            self.navigation_layer.draw();
-            overlay.trigger("click");
-          }
-        });
-      });
-    }
-
-    function download_image(dataUrl){
-      var fileName = 'inchlib.png';
-
-      if ('msToBlob' in self.stage) { // IE10+
-        var blob = self.stage.msToBlob();
-        navigator.msSaveBlob(blob, fileName);
-      } else {
+    html2canvas(self.target_element[0], {backgroundColor: null, scale: 2}).then(canvas => {
         var a = document.createElement('a');
-        a.setAttribute('href', dataUrl);
-        a.setAttribute('target', '_blank');
-        a.setAttribute('download', fileName);
-        a.style.display = 'none';
-        document.body.appendChild(a);
+        a.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+        a.download = 'inchlib.png';
         a.click();
-        document.body.removeChild(a);
-      }
-    };
+    });
+    // var export_menu = self.target_element.find(".export_menu");
+    // var overlay = self._draw_target_overlay();
+
+    // if(export_menu.length){
+    //   export_menu.fadeIn("fast");
+    // }
+    // else{
+    //   export_menu = $("<div class='export_menu'><div><button type='submit' data-action='open'>Show image</button></div><div><button type='submit' data-action='save'>Save image</button></div></div>");
+    //   self.target_element.append(export_menu);
+    //   export_menu.css({"position": "absolute",
+    //                   "top": 45,
+    //                   "left": self.settings.width - 125,
+    //                   "font-size": "12px",
+    //                   "border": "solid #D2D2D2 1px",
+    //                   "border-radius": "5px",
+    //                   "padding": "2px",
+    //                   "background-color": "white"});
+
+    //   var buttons = export_menu.find("button");
+    //   buttons.css({"padding-top": "7px", "padding-bottom": "5px", "padding-right": "8px", "padding-left": "8px", "color": "white", "border": "solid #D2D2D2 1px", "width": "100%", "background-color": "#2171b5", "font-weight": "bold"});  
+
+    //   buttons.hover(
+    //     function(){$(this).css({"cursor": "pointer", "opacity": 0.7})},
+    //     function(){$(this).css({"opacity": 1})}
+    //   );
+
+    //   overlay.click(function(){
+    //     export_menu.fadeOut("fast");
+    //     overlay.fadeOut("fast");
+    //   });
+
+    //   buttons.click(function(){
+    //     var action = $(this).attr("data-action");
+    //     var zoom = 3;
+    //     var width = self.stage.width();
+    //     var height = self.stage.height();
+    //     var loading_div = $("<h3 style='margin-top: 100px; margin-left: 100px; width: " + width + "px; height: " + height + "px;'>Loading...</h3>");
+    //     self.target_element.after(loading_div);
+    //     self.target_element.hide();
+    //     self.stage.width(width*zoom);
+    //     self.stage.height(height*zoom);
+    //     self.stage.scale({x: zoom, y:zoom});
+    //     self.stage.draw();
+    //     self.navigation_layer.hide();
+    //     self.stage.toDataURL({
+    //       quality: 1,
+    //       callback: function(dataUrl){
+    //         if(action === "open"){
+    //           open_image(dataUrl);
+    //         }
+    //         else{
+    //           download_image(dataUrl);
+    //         }
+    //         self.stage.width(width);
+    //         self.stage.height(height);
+    //         self.stage.scale({x: 1, y:1});
+    //         self.stage.draw();
+    //         loading_div.remove();
+    //         self.target_element.show();
+    //         self.navigation_layer.show();
+    //         self.navigation_layer.draw();
+    //         overlay.trigger("click");
+    //       }
+    //     });
+    //   });
+    // }
+
+    // function download_image(dataUrl){
+    //   var fileName = 'inchlib.png';
+
+    //   if ('msToBlob' in self.stage) { // IE10+
+    //     var blob = self.stage.msToBlob();
+    //     navigator.msSaveBlob(blob, fileName);
+    //   } else {
+    //     var a = document.createElement('a');
+    //     a.setAttribute('href', dataUrl);
+    //     a.setAttribute('target', '_blank');
+    //     a.setAttribute('download', fileName);
+    //     a.style.display = 'none';
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     document.body.removeChild(a);
+    //   }
+    // };
     
-    function open_image(dataUrl){
-      window.open(dataUrl, "_blank");
-    };
+    // function open_image(dataUrl){
+    //   window.open(dataUrl, "_blank");
+    // };
   };
 
   InCHlib.prototype._color_scale_click = function(icon, evt){
