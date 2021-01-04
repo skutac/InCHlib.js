@@ -176,7 +176,7 @@ var InCHlib;
           "target" : "YourOwnDivId",
           "heatmap_header": {
             "draw": true,
-            "settings":{
+            "settings": {
               "fontFamily": "Helvetica",
               "fontSize": undefined,
               "rotation": -90,
@@ -238,7 +238,8 @@ var InCHlib;
           "row_ids": {
             "draw": true,
             "fixed_size": false,
-            "tooltip": false
+            "tooltip": false,
+            "type": "canvas" // canvas or html
           },
           "column_dendrogram": {
             "draw": false
@@ -2038,26 +2039,30 @@ var InCHlib;
     }
 
     var x = self.distance + self._get_visible_count()*self.pixels_for_dimension + 15;
-    console.log(self.row_id_size)
+    
     for(i = 0; i < object_y.length; i++){
-        self.target_element.append($("<div>" + object_y[i][0].toString() + "</div>")
-          .css({
-            "position": "absolute", "top": self._hack_round(object_y[i][1] - self.row_id_size/2),
-            "left": x,
-            "font-style": "italic",
-            "font-size": self.row_id_size,
-            "color": "gray"
-          }));
+        if(self.settings.row_ids.type === "html"){
+          self.target_element.append($("<div>" + object_y[i][0].toString() + "</div>")
+            .css({
+              "position": "absolute", "top": self._hack_round(object_y[i][1] - self.row_id_size/2),
+              "left": x,
+              "font-style": "italic",
+              "font-size": self.row_id_size,
+              "color": "gray"
+            }));
+        }
+        else{
+          text = self.objects_ref.heatmap_value.clone({
+              x: x,
+              y: self._hack_round(object_y[i][1] - self.row_id_size/2),
+              fontSize: self.row_id_size,
+              text: object_y[i][0].toString(),
+              fontStyle: 'italic',
+              fill: "gray"
+          });
+          self.heatmap_layer.add(text);
+        }
         
-        // text = self.objects_ref.heatmap_value.clone({
-        //     x: x,
-        //     y: self._hack_round(object_y[i][1] - self.row_id_size/2),
-        //     fontSize: self.row_id_size,
-        //     text: object_y[i][0].toString(),
-        //     fontStyle: 'italic',
-        //     fill: "gray"
-        // });
-        // self.heatmap_layer.add(text);
     }
       
   }
