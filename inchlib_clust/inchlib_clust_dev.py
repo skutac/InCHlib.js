@@ -9,7 +9,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.impute import SimpleImputer
 from scipy import spatial
 
-# import randomcolor
+import randomcolor
 
 LINKAGES = ["single", "complete", "average", "centroid", "ward", "median", "weighted"]
 RAW_LINKAGES = ["ward", "centroid"]
@@ -26,7 +26,6 @@ class Dendrogram():
         self.axis = clustering.clustering_axis
         self.clustering = clustering.clustering
         self.tree = hcluster.to_tree(self.clustering)
-        # print(list(hcluster.leaves_list(self.clustering)))
         self.data = clustering.data
         self.data_names = clustering.data_names
         self.header = clustering.header
@@ -102,6 +101,24 @@ class Dendrogram():
 
         return dendrogram
 
+    def __get_leaves_for_node__(self, nodeid):
+        nodes = [nodeid]
+        leaves = []
+
+        while len(nodes):
+            for nodeid in nodes:
+                node = self.dendrogram["data"]["nodes"][nodeid]
+                if node["count"] > 1:
+                    nodes.extend([node["left_child"], node["right_child"]])
+
+                else:
+                    leaves.append(nodeid)
+
+                nodes.remove(nodeid)
+
+        return leaves
+
+
     def create_cluster_heatmap(self, compress=False, compressed_value="median", write_data=True):
         """Creates cluster heatmap representation in inchlib format. By setting compress parameter to True you can
         cut the dendrogram in a distance to decrease the row size of the heatmap to specified count. 
@@ -134,20 +151,24 @@ class Dendrogram():
         """Color given number of clusters based on a dendrogram cut
         
         Arguments:
-            cluster_count {[int]} -- numer of clusters to color
+            cluster_count {[int]} -- numer of clusters
         """
         if cluster_count > 1:
-            self.color_cluster_threshold = self.__get_distance_threshold__(cluster_count)
+            self.cluster_distance_threshold = self.__get_distance_threshold__(cluster_count)
             rand_color = randomcolor.RandomColor()
             
             to_color = []
             for nodeid, node in self.dendrogram["data"]["nodes"].items():
-                if node["distance"] < self.color_cluster_threshold and self.dendrogram["data"]["nodes"].get(node["parent"], {"distance": 0})["distance"] > self.color_cluster_threshold:
+                if node["distance"] < self.cluster_distance_threshold and self.dendrogram["data"]["nodes"].get(node["parent"], {"distance": 0})["distance"] > self.cluster_distance_threshold:
                     to_color.append(nodeid)
 
             colors = rand_color.generate(count=len(to_color))
             for i, nodeid in enumerate(to_color):
+                node_leaves = self.__get_leaves_for_node__(nodeid)
                 self.dendrogram["data"]["nodes"][nodeid]["color"] = colors[i]
+
+                for lid in node_leaves:
+                    self.dendrogram["data"]["nodes"][lid]["cluster"] = i
 
     def __compress_data__(self):
         nodes = {}
@@ -514,7 +535,6 @@ class Cluster():
         """Reads data in a form of list of lists (tuples)"""
         self.datatype = datatype
         self.missing_values = missing_values
-        print(self.missing_values)
         self.header = header
         data_start = 0
 
