@@ -572,10 +572,9 @@ class Cluster():
                 if value in self.missing_values:
                     data[i][j] = numpy.nan
 
-        imputer = SimpleImputer(missing_values=numpy.nan, strategy=datatype2impute[self.datatype]["strategy"])
+        imputer = SimpleImputer(missing_values=numpy.nan, strategy=datatype2impute[self.datatype]["strategy"], keep_empty_features=True)
         imputed_data = [list(row) for row in imputer.fit_transform(self.data)]
         imputed_data = [[datatype2impute[self.datatype]["value"](value) for value in row] for row in imputed_data]
-
         return imputed_data, missing_values_indexes
         
     def normalize_data(self, feature_range=(0,1), write_original=False):
@@ -625,6 +624,8 @@ class Cluster():
     def __return_missing_values__(self, data, missing_values_indexes):
         for i, indexes in enumerate(missing_values_indexes):
             if indexes:
+                print(data[i])
+                # print(indexes)
                 for index in indexes:
                     data[i][index] = None
         return data
