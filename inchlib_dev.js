@@ -159,6 +159,16 @@ function isMergeableObject(e){return e&&"object"==typeof e&&"[object RegExp]"!==
 
 var InCHlib;
 
+/*<img data-smiles="OC(C(=O)O[C@H]1C[N+]2(CCCOC3=CC=CC=C3)CCC1CC2)(C1=CC=CS1)C1=CC=CS1" 
+        data-smiles-options="{ 'width': 800, 'height': 800 }" />
+                            
+<svg data-smiles="C=CCBr.[Na+].[I-]>CC(=O)C>C=CCI.[Na+].[Br-]  __{'textBelowArrow': '90%'}__" />
+
+<script type="text/javascript" src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
+<script>
+    SmiDrawer.apply();
+</script>*/
+
 (function($){
   
   InCHlib = function(settings){
