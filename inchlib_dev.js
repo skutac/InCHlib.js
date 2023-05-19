@@ -162,7 +162,7 @@ var InCHlib;
 (function($){
   
   InCHlib = function(settings){
-      var self = this;
+      let self = this;
       self.user_settings = settings;
       self.target_element = $("#" + settings.target);
       self.target_element.css({"position": "relative"});
@@ -1192,6 +1192,16 @@ var InCHlib;
         container: self.settings.target,
     });
 
+    let labels = $(`<div id='${self.settings.target}-labels'></div>`)
+      .css({
+        "position": "absolute",
+        "top": self.top_heatmap_distance,
+        "right": 0,
+        "width": self.right_margin,
+        "height": "100%"
+      });
+    self.target_element.append(labels);
+
     self.settings.height = self.heatmap_array.length*self.pixels_for_leaf+self.header_height+self.footer_height;
     self.stage.setWidth(self.settings.width);
     self.stage.setHeight(self.settings.height);
@@ -2031,38 +2041,50 @@ var InCHlib;
     
     for(i = 0, len = self.current_leaf_ids.length; i < len; i++){
         leaf_id = self.current_leaf_ids[i];
-        objects = self.data.nodes[leaf_id].objects;
-        if(objects.length > 1){
-            return;
+        if(self.data.nodes[leaf_id].label){
+          object_y.push([self.data.nodes[leaf_id].label, self.leaves_y_coordinates[leaf_id]]);
         }
-        object_y.push([objects[0], self.leaves_y_coordinates[leaf_id]]);
+        else{
+          objects = self.data.nodes[leaf_id].objects;
+          if(objects.length > 1){
+              return;
+          }
+          object_y.push([objects[0], self.leaves_y_coordinates[leaf_id]]);
+        }
     }
 
     var x = self.distance + self._get_visible_count()*self.pixels_for_dimension + 15;
-    
-    for(i = 0; i < object_y.length; i++){
-        if(self.settings.row_ids.type === "html"){
-          self.target_element.append($("<div>" + object_y[i][0].toString() + "</div>")
-            .css({
-              "position": "absolute", "top": self._hack_round(object_y[i][1] - self.row_id_size/2),
-              "left": x,
-              "font-style": "italic",
-              "font-size": self.row_id_size,
-              "color": "gray"
-            }));
-        }
-        else{
-          text = self.objects_ref.heatmap_value.clone({
-              x: x,
-              y: self._hack_round(object_y[i][1] - self.row_id_size/2),
-              fontSize: self.row_id_size,
-              text: object_y[i][0].toString(),
-              fontStyle: 'italic',
-              fill: "gray"
-          });
-          self.heatmap_layer.add(text);
-        }
-        
+    if(self.settings.row_ids.type === "html"){
+      let labels_target = $(`#${self.settings.target}-labels`);
+      labels_target[0].innerHTML = '';
+      object_y = object_y.sort(function(a, b){return a[1] - b[1]});
+      
+      for(i = 0; i < object_y.length; i++){    
+        labels_target.append($(`<div>${object_y[i][0].toString()}</div>`)
+          .css({
+            "position": "absolute", 
+            "top": self._hack_round(object_y[i][1] - self.top_heatmap_distance - self.row_id_size/2),
+            "left": 5,
+            "font-style": "italic",
+            "white-space": "nowrap",
+            "font-size": self.row_id_size,
+            "color": "gray"
+        }));
+      }
+
+    }    
+    else{
+      for(i = 0; i < object_y.length; i++){    
+        text = self.objects_ref.heatmap_value.clone({
+            x: x,
+            y: self._hack_round(object_y[i][1] - self.row_id_size/2),
+            fontSize: self.row_id_size,
+            text: object_y[i][0].toString(),
+            fontStyle: 'italic',
+            fill: "gray"
+        });
+        self.heatmap_layer.add(text);
+      }
     }
       
   }

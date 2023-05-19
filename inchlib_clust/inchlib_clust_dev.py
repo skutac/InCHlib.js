@@ -11,6 +11,24 @@ from scipy import spatial
 
 import randomcolor
 
+try:
+    import rdkit
+    from rdkit import Chem
+    from rdkit.Chem import AllChem
+    RDKIT = True
+
+    FP2FNC = {
+        "ecfp4": lambda rdmol: AllChem.GetMorganFingerprintAsBitVect(rdmol, radius=2, nBits=1024),
+        "ecfp6": lambda rdmol: AllChem.GetMorganFingerprintAsBitVect(rdmol, radius=3, nBits=1024),
+        "apfp": lambda rdmol: AllChem.GetHashedAtomPairFingerprintAsBitVect(rdmol, nBits=1024),
+        "ttfp": lambda rdmol: AllChem.GetHashedTopologicalTorsionFingerprintAsBitVect(rdmol, nBits=1024),
+        "maccs": lambda rdmol: AllChem.GetMACCSKeysFingerprint(rdmol),
+    }
+    
+except Exception as e:
+    RDKIT = False
+    print("RDKit not found: Cheminformatic-based functionality not available...")
+
 LINKAGES = ["single", "complete", "average", "centroid", "ward", "median", "weighted"]
 RAW_LINKAGES = ["ward", "centroid"]
 DISTANCES = {"numeric": ["braycurtis", "canberra", "chebyshev", "cityblock", "correlation", "cosine", "euclidean", "mahalanobis", "minkowski", "seuclidean", "sqeuclidean"],
@@ -28,8 +46,11 @@ class Dendrogram():
         self.tree = hcluster.to_tree(self.clustering)
         self.data = clustering.data
         self.data_names = clustering.data_names
+        self.labels = clustering.labels
         self.header = clustering.header
         self.dendrogram = False
+        self.smiles = clustering.smiles
+        self.add_structures = clustering.add_structures
 
     def __get_cluster_heatmap__(self, write_data):
         root, nodes = hcluster.to_tree(self.clustering, rd=True)
@@ -56,6 +77,10 @@ class Dendrogram():
             if node["count"] == 1:
                 data = self.data[n]
                 node["objects"] = [self.data_names[n]]
+                node["label"] = self.labels[n]
+
+                if self.add_structures:
+                    node["structure"] = self.smiles[n]
 
                 if node_id2node[node["parent"]]["left_child"] == n:
                     node_id2node[node["parent"]]["left_child"] = n
@@ -524,19 +549,44 @@ class Cluster():
     def __init__(self):
         self.write_original = False
 
-    def read_csv(self, filename, delimiter=",", header=False, missing_values=False, datatype="numeric"):
+    def read_csv(self, filename, delimiter=",", header=False, missing_values=False, datatype="numeric", compound_structure_field=False, add_structures=False, label_field=False):
         """Reads data from the CSV file"""
         self.filename = filename
         csv_reader = csv.reader(open(self.filename, "r"), delimiter=delimiter)
         rows = [row for row in csv_reader]
-        self.read_data(rows, header, missing_values, datatype)
+        self.read_data(rows, header, missing_values, datatype, compound_structure_field, add_structures, label_field)
 
-    def read_data(self, rows, header=False, missing_values=False, datatype="numeric"):
+    def read_data(self, rows, header=False, missing_values=False, datatype="numeric", compound_structure_field=False, add_structures=False, label_field=False):
         """Reads data in a form of list of lists (tuples)"""
         self.datatype = datatype
         self.missing_values = missing_values
         self.header = header
+        self.compound_structure_field = compound_structure_field
+        self.label_field = label_field
+        self.labels = False
+        self.smiles = False
+        self.rdmols = False
+        self.fpobjs = False
+        self.add_structures = add_structures
+
         data_start = 0
+
+        if RDKIT and self.header and self.compound_structure_field and self.compound_structure_field in rows[0]:
+            print("Reading compound structures...")
+            csf_index = rows[0].index(self.compound_structure_field)
+            self.smiles = [row[csf_index] for row in rows[1:]]
+            self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
+            self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
+            
+            for row in rows:
+                row.pop(csf_index)
+
+        if self.header and self.label_field:
+            label_index = rows[0].index(self.label_field)
+            self.labels = [row[label_index] for i, row in enumerate(rows[1:])]
+            
+            for row in rows:
+                row.pop(label_index)
 
         if self.header:
             self.header = rows[0][1:]
@@ -659,7 +709,16 @@ class Cluster():
 
 def _process_(arguments):
     c = Cluster()
-    c.read_csv(arguments.data_file, arguments.data_delimiter, arguments.data_header, arguments.missing_values, arguments.datatype)
+    c.read_csv(
+        filename=arguments.data_file, 
+        delimiter=arguments.data_delimiter, 
+        header=arguments.data_header, 
+        missing_values=arguments.missing_values, 
+        datatype=arguments.datatype,
+        compound_structure_field=arguments.compound_structure_field,
+        add_structures=arguments.add_structures,
+        label_field=arguments.label_field
+    )
     
     if arguments.normalize:
         c.normalize_data(feature_range=(0,1), write_original=arguments.write_original)
@@ -723,6 +782,10 @@ if __name__ == '__main__':
     parser.add_argument("-min", "--minify", default=False, help="minify the InCHlib format", action="store_true")
     parser.add_argument("-dump", "--json_dump", default=True, help="dump the InCHlib format as JSON", action="store_true")
     parser.add_argument("-cc", "--color_clusters", type=int, default=0, help="color defined number of clusters")
+
+    parser.add_argument("-csf", "--compound_structure_field", type=str, default=False, help="the name of a column with a compound structure")
+    parser.add_argument("-as", "--add_structures", default=False, help="add structure smiles to the output json format", action="store_true")
+    parser.add_argument("-lf", "--label_field", type=str, default=False, help="set a label field name in case it is in the data file")
     
     args = parser.parse_args()
     _process_(args)
