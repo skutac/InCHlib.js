@@ -157,17 +157,7 @@ function isMergeableObject(e){return e&&"object"==typeof e&&"[object RegExp]"!==
 *       instance.draw();
 */
 
-var InCHlib;
-
-/*<img data-smiles="OC(C(=O)O[C@H]1C[N+]2(CCCOC3=CC=CC=C3)CCC1CC2)(C1=CC=CS1)C1=CC=CS1" 
-        data-smiles-options="{ 'width': 800, 'height': 800 }" />
-                            
-<svg data-smiles="C=CCBr.[Na+].[I-]>CC(=O)C>C=CCI.[Na+].[Br-]  __{'textBelowArrow': '90%'}__" />
-
-<script type="text/javascript" src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
-<script>
-    SmiDrawer.apply();
-</script>*/
+let InCHlib;
 
 (function($){
   
@@ -269,6 +259,10 @@ var InCHlib;
             "path": {"dir": "", "ext": ""}
           },
           "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true},
+          "structures": {
+            "draw": false,
+            "size": 200
+          }
       };
 
       self.update_settings(settings);
@@ -1184,8 +1178,12 @@ var InCHlib;
     }
     self._adjust_leaf_size(self.heatmap_array.length);
 
-    if(self.settings.row_ids.draw){
+    if(self.settings.row_ids.draw || self.settings.structures.draw){
       self._get_row_id_size();
+
+      if(self.settings.structures.draw && self.right_margin < self.settings.structures.size + 32){
+        self.right_margin = self.settings.structures.size + 32
+      }
     }
     else{
       self.right_margin = 100;
@@ -2064,6 +2062,7 @@ var InCHlib;
     }
 
     var x = self.distance + self._get_visible_count()*self.pixels_for_dimension + 15;
+
     if(self.settings.row_ids.type === "html"){
       let labels_target = $(`#${self.settings.target}-labels`);
       labels_target[0].innerHTML = '';
@@ -2107,9 +2106,6 @@ var InCHlib;
         leaf_id = self.heatmap_array[i][0];
         objects = self.data.nodes[leaf_id].objects;
         if(objects.length > 1){
-            /*self.settings.row_ids.draw = false;
-            self.right_margin = 100;
-            return;*/
             values.push(objects[0] + " +" + (objects.length-1));
         }
         else{
@@ -2134,10 +2130,6 @@ var InCHlib;
                           });
       self.row_id_size = self.settings.row_ids.fixed_size;
       self.right_margin = 20 + test.width();
-      
-      // if(this.right_margin < 100){
-      //   self.right_margin = 100;
-      // }
     }
     else{
       self.row_id_size = self._get_font_size(max_length, 100, self.pixels_for_leaf, 10);
@@ -2544,7 +2536,7 @@ var InCHlib;
     }
 
     if(node.count != 1){
-        self.dendrogram_layer.get("#"+path_id)[0].stroke(color);
+        self.dendrogram_layer.find("#"+path_id)[0].stroke(color);
         self._highlight_path(node.left_child, color);
         self._highlight_path(node.right_child, color);
     }
@@ -2558,7 +2550,7 @@ var InCHlib;
     var self = this;
       var node = self.column_dendrogram.nodes[path_id];
       if(node.count != 1){
-          self.column_dendrogram_layer.get("#col"+path_id)[0].stroke(color);
+          self.column_dendrogram_layer.find("#col"+path_id)[0].stroke(color);
           self._highlight_column_path(node.left_child, color);
           self._highlight_column_path(node.right_child, color);
       }
@@ -2736,7 +2728,7 @@ var InCHlib;
       var node = self.data.nodes[path_id];
 
       if(node.count != 1){
-          var path = self.dendrogram_layer.get("#"+path_id)[0];
+          var path = self.dendrogram_layer.find("#"+path_id)[0];
           if(path){
               path.setStroke("grey");
               self._neutralize_path(node.right_child);
@@ -2977,6 +2969,10 @@ var InCHlib;
     var unzoomed = self.zoomed_clusters["row"].pop();
     var zoomed_count = self.zoomed_clusters["row"].length;
     var node_id = (zoomed_count > 0)?self.zoomed_clusters["row"][zoomed_count-1]:self.root_id;
+    let labels_target = $(`#${self.settings.target}-labels`);
+    if(labels_target.length){
+      labels_target[0].innerHTML = '';
+    }
     self._draw_cluster(node_id);
     self.events.on_unzoom(self._unprefix(unzoomed));
     self._highlight_cluster(unzoomed);
@@ -3895,19 +3891,60 @@ var InCHlib;
 
           self.heatmap_overlay.add(self.row_overlay);
           self.heatmap_overlay.draw();
-
-          if(self.data.nodes[row_id].structure !== undefined){
-            $("body").append(`<img data-smiles="${self.data.nodes[row_id].structure}" data-smiles-options="{ 'width': 800, 'height': 800 }" />`);
-          }
-          SmiDrawer.apply();
           self.events.row_onmouseover(self.data.nodes[row_id].objects, evt);
+
+          if(typeof SmiDrawer != "undefined"){
+            let mol_target = $(`#${self.settings.target}-structure`);
+            
+            if(!mol_target.length){
+              mol_target = $(`<div id="${self.settings.target}-structure"></div>`);
+            }
+
+            let offset = self.target_element.offset();
+            let max_y = self.top_heatmap_distance;
+            let y = evt.evt.pageY - offset.top - self.settings.structures.size - 24;
+
+            if(y < max_y){
+                y = max_y;
+            }
+            
+            mol_target.css({
+              "top": y,
+              "right": 0,
+              "background-color": "white",
+              "border": "solid #f5f5f5 1px",
+              "box-shadow": `0 1px 1px hsl(0deg 0% 0% / 8%), 
+                0 2px 2px hsl(0deg 0% 0% / 8%), 
+                0 4px 4px hsl(0deg 0% 0% / 8%), 
+                0 8px 8px hsl(0deg 0% 0% / 8%), 
+                0 16px 16px hsl(0deg 0% 0% / 8%)`,
+              "position": "absolute",
+              "padding": 12,
+              "width": self.settings.structures.size,
+              "height": self.settings.structures.size
+            });
+
+            if(self.data.nodes[row_id].structure !== undefined){
+              self.target_element.append(
+                mol_target.append(`<img data-smiles="${self.data.nodes[row_id].structure}" data-smiles-options="{'width': ${self.settings.structures.size}, 'height': ${self.settings.structures.size} }" />`)
+              );
+            }
+
+            SmiDrawer.apply();
+          }
       }
   }
 
   InCHlib.prototype._row_mouseleave = function(evt){
     var self = this;
-      self.row_overlay.destroy();
-      self.events.row_onmouseout(evt);
+    self.row_overlay.destroy();
+    self.events.row_onmouseout(evt);
+
+    let mol_target = $(`#${self.settings.target}-structure`);
+
+    if(mol_target.length){
+      mol_target[0].remove();
+    }
   };
 
   InCHlib.prototype._get_cell_data = function(evt){
