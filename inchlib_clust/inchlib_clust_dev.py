@@ -571,12 +571,14 @@ class Cluster():
 
         data_start = 0
 
-        if RDKIT and self.header and self.compound_structure_field and self.compound_structure_field in rows[0]:
+        if self.header and self.compound_structure_field and self.compound_structure_field in rows[0]:
             print("Reading compound structures...")
             csf_index = rows[0].index(self.compound_structure_field)
             self.smiles = [row[csf_index] for row in rows[1:]]
-            self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
-            self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
+
+            if RDKIT:
+                self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
+                self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
             
             for row in rows:
                 row.pop(csf_index)
