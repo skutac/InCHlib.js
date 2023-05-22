@@ -3895,6 +3895,11 @@ var InCHlib;
 
           self.heatmap_overlay.add(self.row_overlay);
           self.heatmap_overlay.draw();
+
+          if(self.data.nodes[row_id].structure !== undefined){
+            $("body").append(`<img data-smiles="${self.data.nodes[row_id].structure}" data-smiles-options="{ 'width': 800, 'height': 800 }" />`);
+          }
+          SmiDrawer.apply();
           self.events.row_onmouseover(self.data.nodes[row_id].objects, evt);
       }
   }
