@@ -239,7 +239,13 @@ let InCHlib;
             "draw": true,
             "fixed_size": false,
             "tooltip": false,
-            "type": "canvas" // canvas or html
+            "type": "canvas", // canvas or html
+            "style": {
+              "font-weight": "normal",
+              "color": "#333",
+              "font-style": "normal",
+              "font-family": "inherit"
+            }
           },
           "column_dendrogram": {
             "draw": false
@@ -2069,16 +2075,16 @@ let InCHlib;
       object_y = object_y.sort(function(a, b){return a[1] - b[1]});
       
       for(i = 0; i < object_y.length; i++){    
-        labels_target.append($(`<div>${object_y[i][0].toString()}</div>`)
+        labels_target.append($(`<div>${object_y[i][0].toString()+'&#13;'}</div>`)
           .css({
             "position": "absolute", 
             "top": self._hack_round(object_y[i][1] - self.top_heatmap_distance - self.row_id_size/2),
             "left": 5,
-            "font-style": "italic",
-            "white-space": "nowrap",
             "font-size": self.row_id_size,
-            "color": "gray"
-        }));
+            "white-space": "nowrap",
+            ...self.settings.row_ids.style
+          })
+        );
       }
 
     }    
