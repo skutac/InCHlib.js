@@ -77,7 +77,8 @@ class Dendrogram():
             if node["count"] == 1:
                 data = self.data[n]
                 node["objects"] = [self.data_names[n]]
-                node["label"] = self.labels[n]
+                if self.labels:
+                    node["label"] = self.labels[n]
 
                 if self.add_structures:
                     node["structure"] = self.smiles[n]

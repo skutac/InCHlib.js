@@ -165,6 +165,7 @@ let InCHlib;
       let self = this;
       self.user_settings = settings;
       self.target_element = $("#" + settings.target);
+      var target_width = self.target_element.width();
       self.target_element.css({"position": "relative"});
 
       /**
@@ -174,10 +175,11 @@ let InCHlib;
 
       self.settings = {
           "target" : "YourOwnDivId",
+          "fontFamily": "inherit",
           "heatmap_header": {
             "draw": true,
-            "settings": {
-              "fontFamily": "Helvetica",
+            "font": {
+              "fontFamily": "inherit",
               "fontSize": undefined,
               "rotation": -90,
               "fill": "#000000"
@@ -196,7 +198,7 @@ let InCHlib;
             "column_width": {"max": 150},
             "relative_width": 0.7,
             "font": {
-              "fontFamily": "Helvetica",
+              "fontFamily": "inherit",
               "fill": "#000000"
             }
           },
@@ -220,8 +222,8 @@ let InCHlib;
             "row_height": 8,
             "feature_names": {
               "draw": true,
-              "settings": {
-                "fontFamily": "Helvetica",
+              "font": {
+                "fontFamily": "inherit",
                 "fontSize": undefined,
                 "fill": "#000000"
               }
@@ -240,7 +242,7 @@ let InCHlib;
             "fixed_size": false,
             "tooltip": false,
             "type": "canvas", // canvas or html
-            "style": {
+            "font": {
               "font-weight": "normal",
               "color": "#333",
               "font-style": "normal",
@@ -255,7 +257,7 @@ let InCHlib;
             "colors": "Reds"
           },
           "max_height" : 800,
-          "width" : 1600,
+          "max_width" : 1600,
           "highlight_colors" : "Oranges",
           "highlighted_rows" : [],
           "label_color": "#9E9E9E",
@@ -267,14 +269,38 @@ let InCHlib;
           "navigation_toggle": {"color_scale": true, "distance_scale": true, "export_button": true, "filter_button": true, "hint_button": true},
           "structures": {
             "draw": false,
-            "size": 200
+            "size": 200,
+            "style": {
+              "padding": 12,
+              "background-color": "white",
+              "border": "solid #d2d2d2 1px",
+              "box-shadow": "0px 2px 5px #D2D2D2",
+              "border-radius": "2px",
+            }
           }
       };
 
+
+
       self.update_settings(settings);
       self.settings.width = (settings.max_width && settings.max_width < target_width)?settings.max_width:self.settings.width;
+      self.settings.width = self.settings.width !== undefined?self.settings.width:target_width;
       self.settings.heatmap.relative_width = (self.settings.heatmap.relative_width>0.9)?0.9:self.settings.heatmap.relative_width;
 
+      if(self.settings.fontFamily != "inherit"){
+        if(self.settings.heatmap_header.font.fontFamily == "inherit"){
+          self.settings.heatmap_header.font.fontFamily = self.settings.fontFamily;
+        }
+        if(self.settings.heatmap.font.fontFamily == "inherit"){
+          self.settings.heatmap.font.fontFamily = self.settings.fontFamily;
+        }
+        if(self.settings.column_metadata.feature_names.font.fontFamily == "inherit"){
+          self.settings.column_metadata.feature_names.font.fontFamily = self.settings.fontFamily;
+        }
+        if(self.settings.row_ids.font.fontFamily == "inherit"){
+          self.settings.row_ids.font.fontFamily = self.settings.fontFamily;
+        }
+      }
       self.header_height = 150;
       self.footer_height = 70;
       self.dendrogram_heatmap_distance = 5;
@@ -840,7 +866,7 @@ let InCHlib;
     if(json["column_dendrogram"] !== undefined && self.settings.column_dendrogram.draw){
       self.column_dendrogram = json.column_dendrogram;
       settings.column_dendrogram.draw = true;
-      settings.heatmap_header = {"settings": {"rotation": -1*self.settings.heatmap_header.settings.rotation}};
+      settings.heatmap_header = {"font": {"rotation": -1*self.settings.heatmap_header.font.rotation}};
     }
     else{
       settings.column_dendrogram.draw = false;
@@ -1161,6 +1187,12 @@ let InCHlib;
   InCHlib.prototype.draw = function(){
     console.time("DRAW");
     var self = this;
+    self.target_padding = {
+      "top": parseInt(window.getComputedStyle(self.target_element[0], null).getPropertyValue('padding-top')),
+      "right": parseInt(window.getComputedStyle(self.target_element[0], null).getPropertyValue('padding-right')),
+      "left": parseInt(window.getComputedStyle(self.target_element[0], null).getPropertyValue('padding-left')),
+      "bottom": parseInt(window.getComputedStyle(self.target_element[0], null).getPropertyValue('padding-bottom')),
+    };
     self.zoomed_clusters = {"row": [], "column": []};
     self.last_highlighted_cluster = null;
     self.current_object_ids = [];
@@ -1187,8 +1219,8 @@ let InCHlib;
     if(self.settings.row_ids.draw || self.settings.structures.draw){
       self._get_row_id_size();
 
-      if(self.settings.structures.draw && self.right_margin < self.settings.structures.size + 32){
-        self.right_margin = self.settings.structures.size + 32
+      if(self.settings.structures.draw && self.right_margin < self.settings.structures.size + self.settings.structures.style.padding*2 + 6){
+        self.right_margin = self.settings.structures.size + self.settings.structures.style.padding*2 + 12
       }
     }
     else{
@@ -1206,10 +1238,11 @@ let InCHlib;
         container: self.settings.target,
     });
 
+
     let labels = $(`<div id='${self.settings.target}-labels'></div>`)
       .css({
         "position": "absolute",
-        "top": self.top_heatmap_distance,
+        "top": self.top_heatmap_distance + self.target_padding.top,
         "right": 0,
         "width": self.right_margin,
         "height": "100%"
@@ -2082,7 +2115,7 @@ let InCHlib;
             "left": 5,
             "font-size": self.row_id_size,
             "white-space": "nowrap",
-            ...self.settings.row_ids.style
+            ...self.settings.row_ids.font
           })
         );
       }
@@ -2152,7 +2185,7 @@ let InCHlib;
       var distance_step = 0;
       var x, i, column_header, key;
       var current_headers = [];
-      var header_settings = self.settings.heatmap_header.settings;
+      var header_settings = self.settings.heatmap_header.font;
       for(i = 0, len = self.on_features["data"].length; i < len; i++){
         current_headers.push({"label": self.header[self.on_features["data"][i]], "min": self.data_descs[i].min, "max": self.data_descs[i].max});
       }
@@ -2598,6 +2631,7 @@ let InCHlib;
       self.highlighted_rows_layer.destroyChildren();
 
       var original_colors = self.settings.heatmap.colors.scale;
+      console.log(self.settings.metadata)
       var original_metadata_colors = self.settings.metadata.colors.scale;
       self.settings.heatmap.colors.scale = self.settings.highlight_colors;
       self.settings.metadata.colors.scale = self.settings.highlight_colors;
@@ -3677,15 +3711,16 @@ let InCHlib;
       help_element.show();
     }
     else{
-      help_element = $("<div class='inchlib_help'><ul><li>Zoom clusters by a long click on a dendrogram node.</li></ul></div>");
+      help_element = $("<div class='inchlib_help'>Zoom clusters by a long click on a dendrogram node</div>");
       help_element.css({"position": "absolute",
                         "top": 70,
                         "left": self.settings.width - 200,
-                        "font-size": 12,
-                        "padding-right": 15,
-                        "width": 200,
+                        "font-size": "0.8rem",
+                        "font-weight": "bold",
+                        "padding": 12,
+                        "max-width": 200,
                         "background-color": "white",
-                        "border-radius": 5,
+                        "border-radius": 2,
                         "border": "solid #DEDEDE 2px",
                         "z-index": 1000
 
@@ -3907,8 +3942,9 @@ let InCHlib;
             }
 
             let offset = self.target_element.offset();
-            let max_y = self.top_heatmap_distance;
-            let y = evt.evt.pageY - offset.top - self.settings.structures.size - 24;
+            let max_y = self.top_heatmap_distance + self.target_padding.top;
+            let padding_size = self.settings.structures.style.padding*2;
+            let y = evt.evt.pageY - offset.top - self.settings.structures.size - padding_size + self.target_padding.top;
 
             if(y < max_y){
                 y = max_y;
@@ -3916,26 +3952,24 @@ let InCHlib;
             
             mol_target.css({
               "top": y,
-              "right": 0,
-              "background-color": "white",
-              "border": "solid #f5f5f5 1px",
-              "box-shadow": `0 1px 1px hsl(0deg 0% 0% / 8%), 
-                0 2px 2px hsl(0deg 0% 0% / 8%), 
-                0 4px 4px hsl(0deg 0% 0% / 8%), 
-                0 8px 8px hsl(0deg 0% 0% / 8%), 
-                0 16px 16px hsl(0deg 0% 0% / 8%)`,
+              "right": self.target_padding.right,
               "position": "absolute",
-              "padding": 12,
-              "width": self.settings.structures.size,
-              "height": self.settings.structures.size
+              "width": self.settings.structures.size + padding_size,
+              "min-height": self.settings.structures.size + padding_size,
+              ...self.settings.structures.style
             });
-
+            
             if(self.data.nodes[row_id].structure !== undefined){
               self.target_element.append(
-                mol_target.append(`<img data-smiles="${self.data.nodes[row_id].structure}" data-smiles-options="{'width': ${self.settings.structures.size}, 'height': ${self.settings.structures.size} }" />`)
+                mol_target.append(`
+                  <img data-smiles="${self.data.nodes[row_id].structure}" 
+                    data-smiles-options="{'width': ${self.settings.structures.size}, 'height': ${self.settings.structures.size}}"
+                    style="width: ${self.settings.structures.size}; height: ${self.settings.structures.size}; border: none;"
+                  />
+                  <div style="font-size: 0.8rem; font-weight: bold;">${self.data.nodes[row_id].label ? self.data.nodes[row_id].label : self.data.nodes[row_id].objects}</div>
+                `)
               );
             }
-
             SmiDrawer.apply();
           }
       }
@@ -4118,8 +4152,10 @@ let InCHlib;
       self.metadata.feature_names.push(name);
     }
 
-    for(var i = 0, len=self.point_ids.length; i<len; i++){
-      var key = self.point_ids[i];
+    var keys = Object.keys(self.data.nodes);
+
+    for(var i = 0, len=keys.length; i<len; i++){
+      var key = keys[i];
       if(self.data.nodes[key].objects !== undefined){
         var row_id = self.data.nodes[key].objects[0];
         var value = data[row_id];
