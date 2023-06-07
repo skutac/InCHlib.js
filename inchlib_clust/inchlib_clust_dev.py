@@ -577,9 +577,9 @@ class Cluster():
             csf_index = rows[0].index(self.compound_structure_field)
             self.smiles = [row[csf_index] for row in rows[1:]]
 
-            if RDKIT:
-                self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
-                self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
+            # if RDKIT:
+            #     self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
+            #     self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
             
             for row in rows:
                 row.pop(csf_index)
@@ -617,7 +617,7 @@ class Cluster():
             raise Exception("".join(["You can choose only from data types: ", ", ".join(DISTANCES.keys())]))
 
         missing_values_indexes = []
-        
+        print(self.data)
         for i, row in enumerate(self.data):
             missing_values_indexes.append([j for j, v in enumerate(row) if v in self.missing_values])
 
