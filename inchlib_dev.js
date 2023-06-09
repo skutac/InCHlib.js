@@ -1239,15 +1239,17 @@ let InCHlib;
     });
 
 
-    let labels = $(`<div id='${self.settings.target}-labels'></div>`)
-      .css({
-        "position": "absolute",
-        "top": self.top_heatmap_distance + self.target_padding.top,
-        "right": 0,
-        "width": self.right_margin,
-        "height": "100%"
-      });
-    self.target_element.append(labels);
+    if(self.settings.row_ids.type == "html"){
+      let labels = $(`<div id='${self.settings.target}-labels'></div>`)
+        .css({
+          "position": "absolute",
+          "top": self.top_heatmap_distance + self.target_padding.top,
+          "right": 0,
+          "width": self.right_margin,
+          "height": "100%"
+        });
+      self.target_element.append(labels);
+    }
 
     self.settings.height = self.heatmap_array.length*self.pixels_for_leaf+self.header_height+self.footer_height;
     self.stage.setWidth(self.settings.width);
@@ -3956,8 +3958,8 @@ let InCHlib;
               "top": y,
               "right": self.target_padding.right,
               "position": "absolute",
-              "width": self.settings.structures.size + padding_size,
-              "min-height": self.settings.structures.size + padding_size,
+              "width": self.settings.structures.size,
+              "min-height": self.settings.structures.size,
               ...self.settings.structures.style
             });
             
