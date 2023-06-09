@@ -1757,10 +1757,10 @@ let InCHlib;
     for(var i = 0, len = features.length; i < len; i++){
       key = features[i];
       if(key < self.dimensions["data"]){
-          self.on_features["data"].push(key);
+        self.on_features["data"].push(key);
       }
       else if(key <= self.dimensions["data"] + self.dimensions["metadata"] - 1){
-            self.on_features["metadata"].push(key-self.dimensions["data"]);
+        self.on_features["metadata"].push(key-self.dimensions["data"]);
       }
       else{
         self.on_features["count_column"].push(0);
@@ -2186,6 +2186,7 @@ let InCHlib;
       var x, i, column_header, key;
       var current_headers = [];
       var header_settings = self.settings.heatmap_header.font;
+
       for(i = 0, len = self.on_features["data"].length; i < len; i++){
         current_headers.push({"label": self.header[self.on_features["data"][i]], "min": self.data_descs[i].min, "max": self.data_descs[i].max});
       }
@@ -2200,6 +2201,7 @@ let InCHlib;
       }
 
       var max_text_length = self._get_max_length(current_headers.map(x => x.label));
+      header_settings.fontSize = undefined;
       if(header_settings.fontSize === undefined){
         var font_size = self._get_font_size(max_text_length, self.header_height, self.pixels_for_dimension, 16);
         if(font_size < 6){
