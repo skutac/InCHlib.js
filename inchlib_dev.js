@@ -1219,8 +1219,8 @@ let InCHlib;
     if(self.settings.row_ids.draw || self.settings.structures.draw){
       self._get_row_id_size();
 
-      if(self.settings.structures.draw && self.right_margin < self.settings.structures.size + self.settings.structures.style.padding*2 + 6){
-        self.right_margin = self.settings.structures.size + self.settings.structures.style.padding*2 + 12
+      if(self.settings.structures.draw && self.right_margin < self.settings.structures.size + self.settings.structures.style.padding*2 + 12){
+        self.right_margin = self.settings.structures.size + self.settings.structures.style.padding*2 + 12;
       }
     }
     else{
@@ -1238,23 +1238,27 @@ let InCHlib;
         container: self.settings.target,
     });
 
+    self.settings.height = self.heatmap_array.length*self.pixels_for_leaf+self.header_height+self.footer_height;
+    self.stage.setWidth(self.settings.width);
+    self.stage.setHeight(self.settings.height);
+    self._draw_stage_layer();
 
     if(self.settings.row_ids.type == "html"){
       let labels = $(`<div id='${self.settings.target}-labels'></div>`)
         .css({
           "position": "absolute",
           "top": self.top_heatmap_distance + self.target_padding.top,
-          "right": 0,
+          "right": 6,
           "width": self.right_margin,
           "height": "100%"
         });
       self.target_element.append(labels);
+      
+      labels[0].addEventListener('click', function() {
+        console.log(self.stage_layer)
+        self.stage_layer.fire("click");
+      });
     }
-
-    self.settings.height = self.heatmap_array.length*self.pixels_for_leaf+self.header_height+self.footer_height;
-    self.stage.setWidth(self.settings.width);
-    self.stage.setHeight(self.settings.height);
-    self._draw_stage_layer();
     
     if(self.settings.dendrogram.draw || self.settings.column_dendrogram.draw){
       self.timer = 0;
@@ -3376,94 +3380,6 @@ let InCHlib;
         a.download = 'inchlib.png';
         a.click();
     });
-    // var export_menu = self.target_element.find(".export_menu");
-    // var overlay = self._draw_target_overlay();
-
-    // if(export_menu.length){
-    //   export_menu.fadeIn("fast");
-    // }
-    // else{
-    //   export_menu = $("<div class='export_menu'><div><button type='submit' data-action='open'>Show image</button></div><div><button type='submit' data-action='save'>Save image</button></div></div>");
-    //   self.target_element.append(export_menu);
-    //   export_menu.css({"position": "absolute",
-    //                   "top": 45,
-    //                   "left": self.settings.width - 125,
-    //                   "font-size": "12px",
-    //                   "border": "solid #D2D2D2 1px",
-    //                   "border-radius": "5px",
-    //                   "padding": "2px",
-    //                   "background-color": "white"});
-
-    //   var buttons = export_menu.find("button");
-    //   buttons.css({"padding-top": "7px", "padding-bottom": "5px", "padding-right": "8px", "padding-left": "8px", "color": "white", "border": "solid #D2D2D2 1px", "width": "100%", "background-color": "#2171b5", "font-weight": "bold"});  
-
-    //   buttons.hover(
-    //     function(){$(this).css({"cursor": "pointer", "opacity": 0.7})},
-    //     function(){$(this).css({"opacity": 1})}
-    //   );
-
-    //   overlay.click(function(){
-    //     export_menu.fadeOut("fast");
-    //     overlay.fadeOut("fast");
-    //   });
-
-    //   buttons.click(function(){
-    //     var action = $(this).attr("data-action");
-    //     var zoom = 3;
-    //     var width = self.stage.width();
-    //     var height = self.stage.height();
-    //     var loading_div = $("<h3 style='margin-top: 100px; margin-left: 100px; width: " + width + "px; height: " + height + "px;'>Loading...</h3>");
-    //     self.target_element.after(loading_div);
-    //     self.target_element.hide();
-    //     self.stage.width(width*zoom);
-    //     self.stage.height(height*zoom);
-    //     self.stage.scale({x: zoom, y:zoom});
-    //     self.stage.draw();
-    //     self.navigation_layer.hide();
-    //     self.stage.toDataURL({
-    //       quality: 1,
-    //       callback: function(dataUrl){
-    //         if(action === "open"){
-    //           open_image(dataUrl);
-    //         }
-    //         else{
-    //           download_image(dataUrl);
-    //         }
-    //         self.stage.width(width);
-    //         self.stage.height(height);
-    //         self.stage.scale({x: 1, y:1});
-    //         self.stage.draw();
-    //         loading_div.remove();
-    //         self.target_element.show();
-    //         self.navigation_layer.show();
-    //         self.navigation_layer.draw();
-    //         overlay.trigger("click");
-    //       }
-    //     });
-    //   });
-    // }
-
-    // function download_image(dataUrl){
-    //   var fileName = 'inchlib.png';
-
-    //   if ('msToBlob' in self.stage) { // IE10+
-    //     var blob = self.stage.msToBlob();
-    //     navigator.msSaveBlob(blob, fileName);
-    //   } else {
-    //     var a = document.createElement('a');
-    //     a.setAttribute('href', dataUrl);
-    //     a.setAttribute('target', '_blank');
-    //     a.setAttribute('download', fileName);
-    //     a.style.display = 'none';
-    //     document.body.appendChild(a);
-    //     a.click();
-    //     document.body.removeChild(a);
-    //   }
-    // };
-    
-    // function open_image(dataUrl){
-    //   window.open(dataUrl, "_blank");
-    // };
   };
 
   InCHlib.prototype._color_scale_click = function(icon, evt){
@@ -3575,7 +3491,7 @@ let InCHlib;
         });
         self.redraw_heatmap();
         self._update_color_scale();
-        overlay.trigger('click');
+        overlay.fire('click');
       })
     }
   }
@@ -3958,7 +3874,7 @@ let InCHlib;
               "top": y,
               "right": self.target_padding.right,
               "position": "absolute",
-              "width": self.settings.structures.size,
+              "width": self.settings.structures.size + self.settings.structures.style.padding*2,
               "min-height": self.settings.structures.size,
               ...self.settings.structures.style
             });
