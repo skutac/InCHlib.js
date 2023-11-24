@@ -787,6 +787,7 @@ if __name__ == '__main__':
     parser.add_argument("-cc", "--color_clusters", type=int, default=0, help="color defined number of clusters")
     parser.add_argument("-csf", "--compound_structure_field", type=str, default=False, help="the name of a column with a compound structure")
     parser.add_argument("-as", "--add_structures", default=False, help="add structure smiles to the output json format", action="store_true")
+    parser.add_argument("-cbs", "--cluster_by_structures", default=False, help="cluster by compound structures (fingerprints)", action="store_true")
     parser.add_argument("-lf", "--label_field", type=str, default=False, help="set a label field name in case it is in the data file")
     
     args = parser.parse_args()
