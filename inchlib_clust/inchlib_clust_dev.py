@@ -577,9 +577,9 @@ class Cluster():
             csf_index = rows[0].index(self.compound_structure_field)
             self.smiles = [row[csf_index] for row in rows[1:]]
 
-            # if RDKIT:
-            #     self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
-            #     self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
+            if RDKIT:
+                self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
+                self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
             
             for row in rows:
                 row.pop(csf_index)
