@@ -576,10 +576,6 @@ class Cluster():
             print("Reading compound structures...")
             csf_index = rows[0].index(self.compound_structure_field)
             self.smiles = [row[csf_index] for row in rows[1:]]
-
-            if RDKIT:
-                self.rdmols = [Chem.MolFromSmiles(row[csf_index]) for row in rows[1:]]
-                self.fpobjs = [FP2FNC["ecfp4"](rdmol) for rdmol in self.rdmols]
             
             for row in rows:
                 row.pop(csf_index)
@@ -638,13 +634,28 @@ class Cluster():
         self.data = min_max_scaler.fit_transform(self.data)
         self.data = [[round(v, 3) for v in row] for row in self.data]
 
-    def cluster_data(self, row_distance="euclidean", row_linkage="single", axis="row", column_distance="euclidean", column_linkage="ward"):
+    def cluster_data(self, row_distance="euclidean", row_linkage="single", axis="row", column_distance="euclidean", column_linkage="ward", cluster_by_structures=False):
         """Performs clustering according to the given parameters.
         @datatype - numeric/binary
         @row_distance/column_distance - see. DISTANCES variable
         @row_linkage/column_linkage - see. LINKAGES variable
         @axis - row/both
         """
+        self.clustered_by_structures = False
+
+        if cluster_by_structures and RDKIT and self.compound_structure_field:
+            print("Generating structure fingerprints...")
+            self.rdmols = [Chem.MolFromSmiles(smiles) for smiles in self.smiles]
+            self.fpobjs = [FP2FNC["ecfp4"](rdmol).ToList() for rdmol in self.rdmols]
+            self.datatype = "binary"
+            self.data = self.fpobjs
+            
+            if not row_distance in DISTANCES[self.datatype]:
+                print("Distance set to jaccard...")
+                row_distance = "jaccard"
+
+            self.clustered_by_structures = True
+
         print("Clustering rows:", row_distance, row_linkage)
         self.clustering_axis = axis
         row_linkage = str(row_linkage)
@@ -665,20 +676,19 @@ class Cluster():
 
         if not self.missing_values is False:
             self.data = self.__return_missing_values__(self.data, self.missing_values_indexes)
+        
         self.column_clustering = []
 
         if axis == "both" and len(self.data[0]) > 2:
             print("Clustering columns:", column_distance, column_linkage)
             self.__cluster_columns__(column_distance, column_linkage)
         
-        if self.write_original or self.datatype == "nominal":
+        if self.write_original or self.datatype == "nominal" or self.clustered_by_structures:
             self.data = self.original_data
 
     def __return_missing_values__(self, data, missing_values_indexes):
         for i, indexes in enumerate(missing_values_indexes):
             if indexes:
-                print(data[i])
-                # print(indexes)
                 for index in indexes:
                     data[i][index] = None
         return data
@@ -726,7 +736,13 @@ def _process_(arguments):
     if arguments.normalize:
         c.normalize_data(feature_range=(0,1), write_original=arguments.write_original)
 
-    c.cluster_data(row_distance=arguments.row_distance, row_linkage=arguments.row_linkage, axis=arguments.axis, column_distance=arguments.column_distance, column_linkage=arguments.column_linkage)
+    c.cluster_data(row_distance=arguments.row_distance,
+        row_linkage=arguments.row_linkage,
+        axis=arguments.axis,
+        column_distance=arguments.column_distance,
+        column_linkage=arguments.column_linkage,
+        cluster_by_structures=arguments.cluster_by_structures
+    )
 
     d = Dendrogram(c)
     d.create_cluster_heatmap(compress=arguments.compress, compressed_value=arguments.compressed_value, write_data=not arguments.dont_write_data)
