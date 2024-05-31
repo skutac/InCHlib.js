@@ -654,6 +654,10 @@ class Cluster():
                 print("Distance set to jaccard...")
                 row_distance = "jaccard"
 
+            if axis != "row":
+                print("Setting axis to row...")
+                axis = "row"
+
             self.clustered_by_structures = True
 
         print("Clustering rows:", row_distance, row_linkage)
