@@ -603,6 +603,7 @@ class Cluster():
         self.data = [[float(val) if not val is None else None for val in r] for r in self.data]
         
     def __impute_missing_values__(self, data):
+        
         datatype2impute = {"numeric": {"strategy":"mean", 
                                         "value": lambda value: round(float(value), 3)}, 
                            "binary": {"strategy":"most_frequent", 
